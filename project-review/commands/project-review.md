@@ -781,4 +781,149 @@ git blame -L ${line},${line} ${file} --porcelain | grep '^committer-time' | cut 
 - ✅ Optional tech debt tracking
 - ✅ Graceful degradation without tests/linter
 
+## Phase 8: GitHub Issue Creation & Cleanup
+
+### Check for GitHub Repository
+
+After completing all fixes and generating the completion report, check if this is a GitHub repository with `git` and `gh` available:
+
+```bash
+# Check if git and gh are available
+GIT_AVAILABLE=$(command -v git >/dev/null 2>&1 && echo "true" || echo "false")
+GH_AVAILABLE=$(command -v gh >/dev/null 2>&1 && echo "true" || echo "false")
+
+# Check if this is a git repo with a GitHub remote
+IS_GITHUB_REPO="false"
+if [ "$GIT_AVAILABLE" = "true" ]; then
+  REMOTE_URL=$(git remote get-url origin 2>/dev/null || echo "")
+  if echo "$REMOTE_URL" | grep -q "github.com"; then
+    IS_GITHUB_REPO="true"
+  fi
+fi
+```
+
+### Create GitHub Issues for Deferred Items
+
+If `git` and `gh` are available and this is a GitHub repository, create issues for all **non-security** deferred items:
+
+```bash
+if [ "$GH_AVAILABLE" = "true" ] && [ "$IS_GITHUB_REPO" = "true" ]; then
+  echo "Creating GitHub issues for deferred items..."
+  
+  # For each non-security deferred issue, create a GitHub issue
+  # DO NOT create public issues for security-sensitive findings
+  # Security issues should remain internal/private
+  
+  for issue in "${DEFERRED_NON_SECURITY_ISSUES[@]}"; do
+    gh issue create \
+      --title "${issue.title}" \
+      --body "${issue.body}"
+  done
+  
+  echo "Created ${#DEFERRED_NON_SECURITY_ISSUES[@]} GitHub issues"
+fi
+```
+
+### Issue Format
+
+Each created issue should include:
+
+```markdown
+## Issue from /project-review
+
+**Severity**: [Critical|High|Medium|Low]
+**Category**: [Performance|Architecture|Code Quality|Enhancement]
+**Effort**: [Small|Medium|Large] (~X hours)
+
+### Description
+[Description of the issue]
+
+### Current Behavior
+\`\`\`[language]
+[Code showing the problem]
+\`\`\`
+
+### Proposed Fix
+[Specific remediation approach]
+
+### Impact
+[Why this matters]
+
+### Files
+- [List of affected files]
+```
+
+### Security Issue Handling
+
+**IMPORTANT**: Security-sensitive issues must NOT be created as public GitHub issues. These include:
+- Token/credential exposure
+- Authentication vulnerabilities
+- Authorization bypasses
+- Injection vulnerabilities
+- Any finding from the security-expert agent that could be exploited
+
+For security issues:
+1. Keep them documented internally only
+2. Fix them immediately if possible
+3. If they require design decisions, note them in the completion report but do not create public issues
+
+### Cleanup: Remove TECHNICAL_DEBT.md
+
+After all issues are either:
+- Fixed, OR
+- Deferred to GitHub issues, OR
+- Documented as security-sensitive (internal only)
+
+**Remove the TECHNICAL_DEBT.md file** to avoid duplication with GitHub issue tracker:
+
+```bash
+if [ "$GH_AVAILABLE" = "true" ] && [ "$IS_GITHUB_REPO" = "true" ]; then
+  # All non-security issues are now in GitHub
+  if [ -f "TECHNICAL_DEBT.md" ]; then
+    rm TECHNICAL_DEBT.md
+    git add TECHNICAL_DEBT.md
+    git commit -m "chore: remove TECHNICAL_DEBT.md - issues tracked in GitHub
+
+Created GitHub issues for all deferred non-security items.
+Security-sensitive issues kept internal."
+    echo "Removed TECHNICAL_DEBT.md - all issues now tracked in GitHub"
+  fi
+else
+  # Keep TECHNICAL_DEBT.md if no GitHub integration
+  echo "TECHNICAL_DEBT.md retained - no GitHub integration available"
+fi
+```
+
+### Cleanup Conditions
+
+Remove TECHNICAL_DEBT.md when ALL of the following are true:
+1. `git` is available
+2. `gh` CLI is available and authenticated
+3. Repository has a GitHub remote
+4. All non-security deferred issues have been created as GitHub issues
+5. No additional manual tasks remain
+
+Keep TECHNICAL_DEBT.md when ANY of the following are true:
+1. No GitHub integration available
+2. `gh` CLI not authenticated
+3. User explicitly requested `--create-tech-debt` flag
+4. Security issues exist that cannot be tracked publicly
+
+### Final Commit
+
+If issues were created and TECHNICAL_DEBT.md was removed:
+
+```bash
+git add -A
+git commit -m "chore: project-review complete - issues tracked in GitHub
+
+Created X GitHub issues for deferred items:
+- #N: [issue title]
+- #N: [issue title]
+...
+
+Security-sensitive issues (Y total) kept internal.
+Fixed Z issues in this review session."
+```
+
 Begin Phase 1 now.
