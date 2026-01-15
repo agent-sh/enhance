@@ -1,0 +1,17 @@
+{
+  "name": "deslop-around",
+  "version": "1.0.0",
+  "description": "AI slop cleanup with minimal diffs and behavior preservation",
+  "author": {
+    "name": "Avi Fenesh",
+    "url": "https://github.com/avifenesh"
+  },
+  "repository": "https://github.com/avifenesh/awsome-slash",
+  "license": "MIT",
+  "keywords": [
+    "code-quality",
+    "cleanup",
+    "refactoring",
+    "maintenance"
+  ]
+}

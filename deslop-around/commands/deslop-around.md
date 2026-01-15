@@ -18,26 +18,28 @@ Parse from $ARGUMENTS or use defaults.
 ## Pre-Context: Platform Detection
 
 ```bash
-# Detect project configuration
-PLATFORM=$(node ${CLAUDE_PLUGIN_ROOT}/lib/platform/detect-platform.js)
-TOOLS=$(node ${CLAUDE_PLUGIN_ROOT}/lib/platform/verify-tools.js)
-
-# Extract platform info
-PROJECT_TYPE=$(echo $PLATFORM | jq -r '.projectType')
-PACKAGE_MGR=$(echo $PLATFORM | jq -r '.packageManager')
-
-# Load slop patterns for this language
-# Patterns available in ${CLAUDE_PLUGIN_ROOT}/lib/patterns/slop-patterns.js
-
-# Determine test command
-if [ "$PROJECT_TYPE" = "nodejs" ]; then
-  TEST_CMD="${PACKAGE_MGR} test"
-elif [ "$PROJECT_TYPE" = "python" ]; then
+# Detect project type and test command
+if [ -f "package.json" ]; then
+  PROJECT_TYPE="nodejs"
+  if command -v npm &> /dev/null; then
+    TEST_CMD="npm test"
+  elif command -v pnpm &> /dev/null; then
+    TEST_CMD="pnpm test"
+  elif command -v yarn &> /dev/null; then
+    TEST_CMD="yarn test"
+  fi
+elif [ -f "requirements.txt" ] || [ -f "pyproject.toml" ]; then
+  PROJECT_TYPE="python"
   TEST_CMD="pytest"
-elif [ "$PROJECT_TYPE" = "rust" ]; then
+elif [ -f "Cargo.toml" ]; then
+  PROJECT_TYPE="rust"
   TEST_CMD="cargo test"
-elif [ "$PROJECT_TYPE" = "go" ]; then
+elif [ -f "go.mod" ]; then
+  PROJECT_TYPE="go"
   TEST_CMD="go test ./..."
+else
+  PROJECT_TYPE="unknown"
+  TEST_CMD=""
 fi
 ```
 

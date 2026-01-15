@@ -1,0 +1,17 @@
+{
+  "name": "pr-merge",
+  "version": "1.0.0",
+  "description": "Intelligent PR merge with validation and deployment testing",
+  "author": {
+    "name": "Avi Fenesh",
+    "url": "https://github.com/avifenesh"
+  },
+  "repository": "https://github.com/avifenesh/awsome-slash",
+  "license": "MIT",
+  "keywords": [
+    "pr-workflow",
+    "merge",
+    "validation",
+    "deployment"
+  ]
+}
