@@ -1,242 +1,235 @@
 ---
 description: Deep repository analysis to realign project plans with actual code reality
-argument-hint: ""
-allowed-tools: Bash(git:*), Bash(gh:*), Read, Glob, Grep, Task, AskUserQuestion, Write
+argument-hint: "[--sources github,docs,code] [--depth quick|thorough] [--output file|display|both] [--file PATH]"
+allowed-tools: Bash(git:*), Bash(gh:*), Read, Glob, Grep, Task, Write
 ---
 
 # /reality-check:scan - Reality Check Scanner
 
 Perform deep repository analysis to identify drift between documented plans and actual implementation.
 
-## Workflow Overview
+## Architecture
 
 ```
-Settings Check → Parallel Scan (3 agents) → Synthesis → Report
-       ↓                    ↓                   ↓
-   (First-run         (issue-scanner,     (plan-synthesizer
-    setup if           doc-analyzer,        combines all
-    needed)            code-explorer)        findings)
+scan.md → collectors.js (pure JS) → plan-synthesizer (Opus) → report
+          ├─ scanGitHubState()      (single call with full context)
+          ├─ analyzeDocumentation()
+          └─ scanCodebase()
 ```
 
-## Phase 1: Settings Check
+Data collection is pure JavaScript (no LLM). Only semantic analysis uses Opus.
 
-Check if settings file exists. If not, prompt user to configure via checkboxes.
+## Arguments
+
+Parse from $ARGUMENTS:
+- `--sources`: Comma-separated list of sources to scan (default: github,docs,code)
+- `--depth`: Scan depth - quick or thorough (default: thorough)
+- `--output`: Output mode - file, display, or both (default: both)
+- `--file`: Output file path (default: reality-check-report.md)
+
+Example: `/reality-check:scan --sources github,docs --depth quick --output file`
+
+## Phase 1: Parse Arguments and Collect Data
 
 ```javascript
-const rcState = require('${CLAUDE_PLUGIN_ROOT}/lib/state/reality-check-state.js');
+const collectors = require('${CLAUDE_PLUGIN_ROOT}/lib/reality-check/collectors.js');
 
-// Check for existing settings
-if (!rcState.hasSettings()) {
-  console.log("No settings found. Starting first-run setup...");
-  // → Use AskUserQuestion to gather settings
+// Parse arguments
+const args = '$ARGUMENTS'.split(' ').filter(Boolean);
+const options = {
+  sources: ['github', 'docs', 'code'],
+  depth: 'thorough',
+  output: 'both',
+  file: 'reality-check-report.md',
+  cwd: process.cwd()
+};
+
+// Parse flags
+for (let i = 0; i < args.length; i++) {
+  if (args[i] === '--sources' && args[i+1]) {
+    options.sources = args[++i].split(',').map(s => s.trim());
+  } else if (args[i] === '--depth' && args[i+1]) {
+    options.depth = args[++i];
+  } else if (args[i] === '--output' && args[i+1]) {
+    options.output = args[++i];
+  } else if (args[i] === '--file' && args[i+1]) {
+    options.file = args[++i];
+  }
 }
-```
-
-### First-Run Setup (if no settings exist)
-
-Use AskUserQuestion with checkboxes to gather configuration:
-
-```javascript
-AskUserQuestion({
-  questions: [
-    {
-      header: "Data Sources",
-      question: "Which sources should I scan for project state?",
-      options: [
-        { label: "GitHub Issues & PRs (Recommended)", description: "Scan open issues, PRs, and milestones" },
-        { label: "Documentation files", description: "README, CLAUDE.md, docs/, PLAN.md" },
-        { label: "Linear issues", description: "Requires Linear MCP integration" },
-        { label: "All sources", description: "Comprehensive scan of everything" }
-      ],
-      multiSelect: true
-    },
-    {
-      header: "Scan Depth",
-      question: "How thorough should the analysis be?",
-      options: [
-        { label: "Thorough (Recommended)", description: "Deep analysis, may take longer" },
-        { label: "Quick", description: "Surface-level scan, faster results" },
-        { label: "Medium", description: "Balanced depth and speed" }
-      ],
-      multiSelect: false
-    },
-    {
-      header: "Output",
-      question: "How should I deliver the results?",
-      options: [
-        { label: "Write to file (Recommended)", description: "Save reality-check-report.md" },
-        { label: "Display only", description: "Show in conversation only" },
-        { label: "Both", description: "Save file and show summary" }
-      ],
-      multiSelect: false
-    }
-  ]
-});
-```
-
-After collecting settings, write them:
-
-```javascript
-const settings = mapResponsesToSettings(responses);
-rcState.writeSettings(settings);
-console.log("Settings saved to .claude/reality-check.local.md");
-```
-
-## Phase 2: Initialize Scan
-
-```javascript
-const settings = rcState.readSettings();
-const state = rcState.createState(settings);
-rcState.writeState(state);
-
-rcState.startPhase('parallel-scan');
 
 console.log(`
 ## Starting Reality Check Scan
 
-**Scan ID**: ${state.scan.id}
-**Sources**: ${Object.entries(settings.sources).filter(([k,v]) => v).map(([k]) => k).join(', ')}
-**Depth**: ${settings.scan_depth}
+**Sources**: ${options.sources.join(', ')}
+**Depth**: ${options.depth}
+**Output**: ${options.output}
 
-Launching parallel scanners...
+Collecting data...
+`);
+
+// Collect all data using pure JavaScript (no LLM)
+const collectedData = await collectors.collectAllData(options);
+
+// Check if GitHub data collection succeeded
+if (options.sources.includes('github') && collectedData.github && !collectedData.github.available) {
+  console.log(`
+⚠️ GitHub CLI not available or not authenticated.
+Run \`gh auth login\` to enable GitHub issue scanning.
+Continuing with other sources...
+  `);
+}
+
+console.log(`
+### Data Collection Complete
+
+${collectedData.github?.available ? `- **GitHub**: ${collectedData.github.issues.length} issues, ${collectedData.github.prs.length} PRs` : '- **GitHub**: Not available'}
+${collectedData.docs ? `- **Documentation**: ${Object.keys(collectedData.docs.files).length} files analyzed` : '- **Documentation**: Skipped'}
+${collectedData.code ? `- **Code**: ${Object.keys(collectedData.code.structure).length} directories scanned` : '- **Code**: Skipped'}
+
+→ Sending to semantic analyzer...
 `);
 ```
 
-## Phase 3: Parallel Agent Execution
+## Phase 2: Semantic Analysis (Single Opus Call)
 
-Launch three scanner agents in parallel:
-
-```javascript
-// Launch all three scanners simultaneously
-await Promise.all([
-  Task({
-    subagent_type: "reality-check:issue-scanner",
-    prompt: `Scan GitHub issues and PRs. Settings: ${JSON.stringify(settings.sources)}`,
-    run_in_background: false
-  }),
-
-  Task({
-    subagent_type: "reality-check:doc-analyzer",
-    prompt: `Analyze documentation files. Paths: ${settings.sources.docs_paths.join(', ')}`,
-    run_in_background: false
-  }),
-
-  Task({
-    subagent_type: "reality-check:code-explorer",
-    prompt: `Deep codebase exploration. Exclusions: ${settings.exclusions.paths.join(', ')}`,
-    run_in_background: false
-  })
-]);
-
-rcState.completePhase({ scannersCompleted: 3 });
-```
-
-## Phase 4: Synthesis
-
-After all scanners complete, launch the synthesizer:
+Send all collected data to plan-synthesizer for deep semantic analysis:
 
 ```javascript
-rcState.startPhase('synthesis');
+const analysisPrompt = `
+You are analyzing a project to identify drift between documented plans and actual implementation.
 
-const state = rcState.readState();
+## Collected Data
 
-await Task({
-  subagent_type: "reality-check:plan-synthesizer",
-  model: "opus",
-  prompt: `
-Synthesize findings from all scanners:
+### GitHub State
+\`\`\`json
+${JSON.stringify(collectedData.github, null, 2)}
+\`\`\`
 
-**Issue Scanner Findings**: ${JSON.stringify(state.agents.issueScanner?.result || {})}
-**Doc Analyzer Findings**: ${JSON.stringify(state.agents.docAnalyzer?.result || {})}
-**Code Explorer Findings**: ${JSON.stringify(state.agents.codeExplorer?.result || {})}
+### Documentation Analysis
+\`\`\`json
+${JSON.stringify(collectedData.docs, null, 2)}
+\`\`\`
 
-Priority weights: ${JSON.stringify(settings.priority_weights)}
+### Codebase Analysis
+\`\`\`json
+${JSON.stringify(collectedData.code, null, 2)}
+\`\`\`
 
-Create a prioritized reality-grounded plan.
-  `
-});
+## Your Task
 
-rcState.completePhase({ synthesisComplete: true });
-```
+Be BRUTALLY SPECIFIC. The user wants concrete, actionable insights - not generic observations.
 
-## Phase 5: Report Generation
+### 1. Issue-by-Issue Verification
 
-```javascript
-rcState.startPhase('report-generation');
+For EACH open issue, determine:
+- Is this already implemented? → "Close issue #X - implemented in src/auth/login.js"
+- Is this stale/irrelevant? → "Close issue #X - no longer applicable after Y refactor"
+- Is this blocked? → "Issue #X blocked by: missing Z dependency"
 
-const state = rcState.readState();
-const settings = rcState.readSettings();
+### 2. Phase/Checkbox Validation
 
-if (settings.output.write_to_file) {
-  // Write report to file
-  const reportPath = settings.output.file_path;
-  await Write({
-    file_path: reportPath,
-    content: state.report.content
-  });
-  console.log(`Report saved to: ${reportPath}`);
-}
+For EACH phase or checkbox marked "complete" in docs:
+- Verify against actual code: Does the feature exist?
+- Check for missing pieces: "Phase 'Authentication' marked complete but MISSING:
+  - Password reset functionality (no code in auth/)
+  - Session timeout handling (not implemented)
+  - Tests for login flow (0 test files)"
 
-if (settings.output.display_summary) {
-  // Display summary
-  console.log(state.report.summary);
-}
+### 3. Release Readiness Assessment
 
-rcState.completePhase({ reportGenerated: true });
-```
+If there are milestones or planned releases, assess:
+- "Your plan to release tomorrow is UNREALISTIC because:
+  - 3 critical tests missing for payment module
+  - No QA coverage on authentication flows
+  - Issue #45 (security) still open
+  - Phase B only 40% complete despite being marked done"
+
+### 4. Specific Recommendations
+
+Output SPECIFIC actions, not generic advice:
+- "Close issues: #12, #34, #56 (already implemented)"
+- "Reopen: Phase C (missing: X, Y, Z)"
+- "Block release until: tests added for auth/, issue #78 fixed"
+- "Update PLAN.md: Phase B is NOT complete - missing items listed above"
 
 ## Output Format
 
 ```markdown
-## Reality Check Complete
+# Reality Check Report
 
-**Scan ID**: ${scanId}
-**Duration**: ${duration}
+## Executive Summary
+[2-3 sentences: Overall project health and biggest concerns]
 
-### Summary
-- **Issues scanned**: ${issueCount}
-- **Docs analyzed**: ${docCount}
-- **Code files explored**: ${fileCount}
+## Issues to Close (Already Done)
+- #XX: [title] - Implemented in [file/location]
+- #YY: [title] - No longer relevant because [reason]
 
-### Key Findings
+## Phases Marked Complete But NOT Actually Done
+### [Phase Name]
+**Status in docs**: Complete ✓
+**Actual status**: INCOMPLETE
+**Missing**:
+- [ ] [Specific missing item 1]
+- [ ] [Specific missing item 2]
 
-**Drift Detected**:
-${driftItems.map(d => `- ${d.description} (${d.severity})`).join('\n')}
+## Release Blockers
+If you're planning to ship soon, these MUST be addressed:
+1. [Specific blocker with file/issue reference]
+2. [Specific blocker with file/issue reference]
 
-**Gaps Identified**:
-${gaps.map(g => `- ${g.description}`).join('\n')}
+## Issues That Need Attention
+- #XX: [why it's stale/blocked/misprioritized]
 
-### Reconstructed Plan
+## Quick Wins
+Things you can do right now:
+1. Close issue #XX (already done)
+2. Update Phase Y status (not complete)
+3. Add test for [specific untested code]
+```
+`;
 
-${prioritizedPlan}
-
----
-Full report: ${reportPath}
+await Task({
+  subagent_type: "reality-check:plan-synthesizer",
+  prompt: analysisPrompt,
+  description: "Analyze project reality"
+});
 ```
 
-## Error Handling
+## Phase 3: Output Report
+
+After the synthesizer completes, the report is available. Handle output per settings:
 
 ```javascript
-try {
-  // ... scan workflow ...
-} catch (error) {
-  console.log(`
-## Scan Failed
+// The synthesizer outputs the report directly
+// Handle file writing if requested
 
-**Error**: ${error.message}
-
-Run \`/reality-check:scan\` to retry.
-  `);
+if (options.output === 'file' || options.output === 'both') {
+  console.log(`\n---\nReport saved to: ${options.file}`);
 }
+
+console.log(`
+## Reality Check Complete
+
+Use the findings above to realign your project with reality.
+Run \`/reality-check:scan --depth quick\` for faster subsequent scans.
+`);
 ```
+
+## Quick Reference
+
+| Flag | Values | Default | Description |
+|------|--------|---------|-------------|
+| --sources | github,docs,code | all three | Which sources to scan |
+| --depth | quick, thorough | thorough | How deep to analyze |
+| --output | file, display, both | both | Where to output results |
+| --file | path | reality-check-report.md | Output file path |
 
 ## Success Criteria
 
-- Settings gathered via checkboxes on first run
-- Three scanner agents run in parallel
-- Synthesizer combines all findings
-- Report generated per output settings
-- Drift and gaps clearly identified
+- Data collected via pure JavaScript (no LLM overhead)
+- Single Opus call for semantic analysis with full context
+- Drift and gaps clearly identified with examples
 - Prioritized reconstruction plan produced
+- Report output per user settings
 
 Begin scan now.
