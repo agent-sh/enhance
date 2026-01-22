@@ -7,10 +7,21 @@ argument-hint: "[report|apply] [scope-path] [max-changes]"
 
 You are a senior maintainer doing periodic repo hygiene. Your mission: remove "AI slop" while preserving behavior and minimizing diffs.
 
+## Modes (User Choice)
+
+This command supports **two scope modes** - you choose:
+
+| Mode | Scope | Command |
+|------|-------|---------|
+| **Path-based** | Specific directory/files | `/deslop-around [apply] src/` |
+| **Codebase** | Entire repository | `/deslop-around [apply]` |
+
+For **diff-based cleanup** of new work only, use the `deslop-work` agent via `/next-task`.
+
 ## Arguments
 
 - **Mode**: `report` (default) or `apply`
-- **Scope**: Path or glob pattern (default: `.`)
+- **Scope**: Path or glob pattern (default: `.` = codebase)
 - **Max changes**: Number of changesets (default: 5)
 
 Parse from $ARGUMENTS or use defaults.
@@ -71,41 +82,30 @@ git ls-files | wc -l           # File count
 
 ## AI Slop Definitions
 
-Detect and remove:
+Detect and remove patterns from `${CLAUDE_PLUGIN_ROOT}/lib/patterns/slop-patterns.js`.
 
-- **Console Debugging**: `console.log()`, `print()`, `println!()`, `dbg!()`
-- **Old TODOs**: Comments >90 days old (check line age)
-- **Commented Code**: >5 consecutive commented lines
-- **Placeholder Text**: "lorem ipsum", "test test", "TODO: implement"
-- **Empty Catch**: Empty catch/except blocks without logging
-- **Magic Numbers**: Large hardcoded numbers (>1000)
-- **Disabled Linters**: eslint-disable, pylint: disable, #noqa
-- **Trailing Whitespace**: Whitespace at end of lines
-- **Mixed Indentation**: Tabs and spaces mixed
-- **Unused Imports**: Imports marked as unused
-- **Hardcoded URLs**: URLs that should be config
-- **Debug Imports**: `import pdb`, `import ipdb`
-- **Placeholder Functions**: `return 0`, `todo!()`, `raise NotImplementedError`, `throw Error("TODO")`
-- **Excessive Documentation**: JSDoc >3x function body length
-- **Phantom References**: Issue/PR mentions, file path references in comments
-- **Generic Naming**: Variables named `data`, `result`, `item`, `temp`, `value` (suggests more specific names)
+**Categories detected:**
 
-### Code Smell Detection
+| Category | Examples |
+|----------|----------|
+| Console debugging | `console.log()`, `print()`, `dbg!()`, `println!()` |
+| Old TODOs | Comments with TODO/FIXME >90 days old |
+| Placeholder code | `return 0`, `todo!()`, `raise NotImplementedError` |
+| Empty catch/except | Empty error handlers without logging |
+| Hardcoded secrets | API keys, tokens, credentials |
+| Excessive docs | JSDoc >3x function body length |
+| Phantom references | Issue/PR mentions in comments |
+| Code smells | Boolean blindness, message chains, mutable globals |
 
-High-impact code smells that indicate maintainability issues:
+**Certainty levels:**
 
-- **Boolean Blindness**: Function calls with 3+ consecutive boolean params (e.g., `process(true, false, true)`)
-- **Message Chains**: Long method chains (4+ calls) or deep property access (5+ levels)
-- **Mutable Globals**: Module-level mutable state with UPPERCASE names (`let CONFIG = {}`)
-- **Dead Code**: Unreachable code after `return`, `throw`, `break`, `continue`
-- **Shotgun Surgery**: Files that frequently change together (git history analysis)
+| Level | Action | Description |
+|-------|--------|-------------|
+| **HIGH** | Auto-fix | Direct regex match - definitive slop |
+| **MEDIUM** | Verify context | Multi-pass analysis - review before fixing |
+| **LOW** | Flag only | Heuristic - may be false positive |
 
-Heuristic patterns (may have false positives, use judgment):
-
-- **Feature Envy**: Method accessing another object 3+ times (may belong in that class)
-- **Speculative Generality**: Underscore-prefixed unused params, empty interfaces
-
-Reference patterns from `${CLAUDE_PLUGIN_ROOT}/lib/patterns/slop-patterns.js`
+See pattern library for full regex patterns and language-specific variants.
 
 ## Phase A: Map + Diagnose (Always)
 
