@@ -142,9 +142,10 @@ const TASKS_REGISTRY_PATH = '${STATE_DIR}/tasks.json';
 const MAIN_REPO_PATH = process.cwd(); // Still in main repo at this point
 
 function claimTaskInRegistry(task, branch, worktreePath) {
-  // Ensure .claude directory exists
-  if (!fs.existsSync('.claude')) {
-    fs.mkdirSync('.claude', { recursive: true });
+  // Ensure state directory exists (platform-aware: .claude, .opencode, or .codex)
+  const stateDir = process.env.AI_STATE_DIR || '.claude';
+  if (!fs.existsSync(stateDir)) {
+    fs.mkdirSync(stateDir, { recursive: true });
   }
 
   // Load or create registry
@@ -210,9 +211,10 @@ const fs = require('fs');
 const WORKTREE_STATUS_PATH = '${STATE_DIR}/workflow-status.json';
 
 function createWorktreeStatus(task, workflow, branch, mainRepoPath) {
-  // Ensure .claude directory exists in worktree
-  if (!fs.existsSync('.claude')) {
-    fs.mkdirSync('.claude', { recursive: true });
+  // Ensure state directory exists in worktree (platform-aware)
+  const stateDir = process.env.AI_STATE_DIR || '.claude';
+  if (!fs.existsSync(stateDir)) {
+    fs.mkdirSync(stateDir, { recursive: true });
   }
 
   const status = {
