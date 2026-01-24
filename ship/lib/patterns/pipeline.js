@@ -6,7 +6,7 @@
  * - Phase 2 (optional): CLI tools (jscpd, madge, escomplex) - if available
  * - Phase 3 (LLM handoff): certainty-tagged findings for agent review
  *
- * Inherits modes from deslop-around: report (analyze only) vs apply (fix issues)
+ * Inherits modes from deslop: report (analyze only) vs apply (fix issues)
  *
  * @module patterns/pipeline
  * @author Avi Fenesh

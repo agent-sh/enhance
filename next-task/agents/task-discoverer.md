@@ -493,7 +493,7 @@ if [ "$ISSUE_COUNT" -eq 0 ]; then
   echo ""
   echo "Suggestions:"
   echo "1. Create issues for planned work"
-  echo "2. Run /project-review to find improvements"
+  echo "2. Run /audit-project to find improvements"
   echo "3. Use 'all' priority filter"
 
   workflowState.failPhase("No tasks found", {

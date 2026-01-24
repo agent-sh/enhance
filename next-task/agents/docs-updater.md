@@ -8,7 +8,7 @@ model: sonnet
 # Docs Updater Agent
 
 Update documentation that relates to the work done.
-Unlike `/update-docs-around` which syncs all docs, this agent focuses specifically
+Unlike `/sync-docs` which syncs all docs, this agent focuses specifically
 on documentation related to the files modified in the current workflow.
 
 **Architecture**: Sonnet discovers → Haiku executes

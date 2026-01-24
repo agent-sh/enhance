@@ -5,7 +5,7 @@ allowed-tools: Bash(git:*), Read, Write, Edit, Grep, Glob
 model: sonnet
 ---
 
-# /update-docs-around - Documentation Sync
+# /sync-docs - Documentation Sync
 
 Compare documentation with actual code state and fix discrepancies.
 This is a standalone command (not part of workflow) that scans the entire repo.
@@ -396,16 +396,16 @@ ${recommendations.map(r => `- ${r}`).join('\n')}
 
 ```bash
 # Report-only mode (default)
-/update-docs-around
+/sync-docs
 
 # Apply fixes
-/update-docs-around --apply
+/sync-docs --apply
 
 # Check specific directory
-/update-docs-around docs/ --report-only
+/sync-docs docs/ --report-only
 
 # Apply fixes to specific path
-/update-docs-around docs/api --apply
+/sync-docs docs/api --apply
 ```
 
 ## Success Criteria

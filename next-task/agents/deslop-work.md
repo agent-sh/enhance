@@ -22,7 +22,7 @@ If no files, output the JSON result and exit.
 
 ### 2. Get Slop Report
 
-Invoke `/deslop-around report <files>` using **Skill** tool to get findings with certainty levels.
+Invoke `/deslop report <files>` using **Skill** tool to get findings with certainty levels.
 
 ### 3. Apply Fixes
 
