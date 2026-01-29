@@ -61,6 +61,19 @@ function validatePathWithinBase(targetPath, basePath) {
   }
 }
 
+function assertSafeInvestigationId(id) {
+  if (!id || typeof id !== 'string') {
+    throw new Error('Investigation id is required');
+  }
+  if (id.includes('..') || id.includes('/') || id.includes('\\') || id.includes('\0')) {
+    throw new Error('Investigation id contains invalid characters');
+  }
+  if (!/^[a-zA-Z0-9._-]+$/.test(id)) {
+    throw new Error('Investigation id contains invalid characters');
+  }
+  return id;
+}
+
 /**
  * Generate a unique investigation ID
  * @returns {string}
@@ -125,11 +138,9 @@ function getInvestigationPath(basePath = process.cwd()) {
  * @returns {string}
  */
 function getInvestigationLogPath(id, basePath = process.cwd()) {
-  if (!id) {
-    throw new Error('Investigation id is required');
-  }
+  const safeId = assertSafeInvestigationId(id);
   const { logDir } = ensurePerfDirs(basePath);
-  return path.join(logDir, `${id}.md`);
+  return path.join(logDir, `${safeId}.md`);
 }
 
 /**

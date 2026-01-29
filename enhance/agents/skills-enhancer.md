@@ -2,7 +2,7 @@
 name: skills-enhancer
 description: Analyze SKILL.md files for trigger and structure quality
 tools: Read, Glob, Grep
-model: sonnet
+model: opus
 ---
 
 # Skills Enhancer Agent

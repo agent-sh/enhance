@@ -14,6 +14,19 @@ const { validateBaseline, assertValid } = require('./schemas');
 
 const BASELINE_DIR = 'baselines';
 
+function assertSafeBaselineVersion(version) {
+  if (!version || typeof version !== 'string') {
+    throw new Error('Baseline version is required');
+  }
+  if (version.includes('..') || version.includes('/') || version.includes('\\') || version.includes('\0')) {
+    throw new Error('Baseline version contains invalid characters');
+  }
+  if (!/^[a-zA-Z0-9._+-]+$/.test(version)) {
+    throw new Error('Baseline version contains invalid characters');
+  }
+  return version;
+}
+
 /**
  * Get baseline directory path
  * @param {string} basePath
@@ -43,10 +56,8 @@ function ensureBaselineDir(basePath = process.cwd()) {
  * @returns {string}
  */
 function getBaselinePath(version, basePath = process.cwd()) {
-  if (!version) {
-    throw new Error('Baseline version is required');
-  }
-  return path.join(ensureBaselineDir(basePath), `${version}.json`);
+  const safeVersion = assertSafeBaselineVersion(version);
+  return path.join(ensureBaselineDir(basePath), `${safeVersion}.json`);
 }
 
 /**

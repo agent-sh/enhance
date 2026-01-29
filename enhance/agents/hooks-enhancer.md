@@ -2,7 +2,7 @@
 name: hooks-enhancer
 description: Analyze hook definitions for safety and best practices
 tools: Read, Glob, Grep
-model: sonnet
+model: opus
 ---
 
 # Hooks Enhancer Agent

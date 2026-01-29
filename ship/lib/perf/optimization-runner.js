@@ -40,9 +40,10 @@ function runOptimizationExperiment(options) {
   }
 
   // NOTE: Caller is responsible for applying the experiment change here.
-  const experimentRun1 = runBenchmark(command, { duration: DEFAULT_MIN_DURATION, env });
-  const experimentRun2 = runBenchmark(command, { duration: DEFAULT_MIN_DURATION, env });
-  const experimentMetrics = parseMetrics(experimentRun2.output);
+  // Warm up the system (caches/JIT) before capturing experiment metrics.
+  runBenchmark(command, { duration: DEFAULT_MIN_DURATION, env });
+  const experimentRun = runBenchmark(command, { duration: DEFAULT_MIN_DURATION, env });
+  const experimentMetrics = parseMetrics(experimentRun.output);
   if (!experimentMetrics.ok) {
     throw new Error(`Experiment parse failed: ${experimentMetrics.error}`);
   }
