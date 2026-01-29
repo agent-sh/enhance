@@ -4,7 +4,7 @@
  * @module lib/perf/checkpoint
  */
 
-const { execSync } = require('child_process');
+const { execSync, execFileSync } = require('child_process');
 
 /**
  * Check if git repo is clean.
@@ -85,8 +85,8 @@ function commitCheckpoint(input) {
   if (isDuplicateCheckpoint(message)) {
     return { ok: false, reason: 'duplicate checkpoint' };
   }
-  execSync('git add -A', { stdio: 'ignore' });
-  execSync(`git commit -m "${message.replace(/"/g, '\\"')}"`, { stdio: 'ignore' });
+  execFileSync('git', ['add', '-A'], { stdio: 'ignore' });
+  execFileSync('git', ['commit', '-m', message], { stdio: 'ignore' });
   return { ok: true, message };
 }
 
