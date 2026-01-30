@@ -38,7 +38,6 @@ function loadConfig(projectRoot) {
         return mergeConfig(DEFAULT_CONFIG, userConfig);
       } catch (err) {
         // Invalid config, use defaults
-        console.warn(`Warning: Invalid enhance config at ${configPath}: ${err.message}`);
       }
     }
   }
