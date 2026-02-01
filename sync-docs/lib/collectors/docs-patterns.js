@@ -11,7 +11,7 @@
 
 const fs = require('fs');
 const path = require('path');
-const { execSync } = require('child_process');
+const { spawnSync } = require('child_process');
 
 const DEFAULT_OPTIONS = {
   cwd: process.cwd()
@@ -31,13 +31,13 @@ function findRelatedDocs(changedFiles, options = {}) {
   // Find all markdown files
   const docFiles = findMarkdownFiles(basePath);
 
-  // Cache doc contents to avoid repeated reads
-  const docCache = new Map();
+  // Cache doc file contents to avoid redundant disk reads
+  const docContentCache = new Map();
   for (const doc of docFiles) {
     try {
-      docCache.set(doc, fs.readFileSync(path.join(basePath, doc), 'utf8'));
+      docContentCache.set(doc, fs.readFileSync(path.join(basePath, doc), 'utf8'));
     } catch {
-      // Skip unreadable files
+      // Skip unreadable docs
     }
   }
 
@@ -47,7 +47,7 @@ function findRelatedDocs(changedFiles, options = {}) {
     const dirName = path.dirname(file);
 
     for (const doc of docFiles) {
-      const content = docCache.get(doc);
+      const content = docContentCache.get(doc);
       if (!content) continue;
 
       const references = [];
@@ -215,9 +215,6 @@ function findLineNumber(content, search) {
   return content.substring(0, index).split('\n').length;
 }
 
-// Cache for git show results to avoid repeated subprocess calls
-const gitCache = new Map();
-
 /**
  * Get exports from a file at a specific git ref
  * @param {string} filePath - File path
@@ -227,36 +224,27 @@ const gitCache = new Map();
  */
 function getExportsFromGit(filePath, ref, options = {}) {
   const opts = { ...DEFAULT_OPTIONS, ...options };
-  const cacheKey = `${ref}:${filePath}`;
-
-  // Return cached result if available
-  if (gitCache.has(cacheKey)) {
-    return gitCache.get(cacheKey);
-  }
 
   try {
-    // Use spawnSync with args array to prevent command injection
-    const { spawnSync } = require('child_process');
+    // Use spawnSync with args array to avoid shell interpolation (security)
     const result = spawnSync('git', ['show', `${ref}:${filePath}`], {
       cwd: opts.cwd,
       encoding: 'utf8',
       stdio: ['pipe', 'pipe', 'pipe']
     });
 
-    if (result.error || result.status !== 0) {
-      gitCache.set(cacheKey, []);
+    if (result.status !== 0) {
       return [];
     }
-
     const content = result.stdout;
 
     const exports = [];
 
-    // Export patterns
+    // Export patterns (all with g flag to avoid infinite loop in while/exec)
     const patterns = [
       /export\s+(?:function|class|const|let|var)\s+(\w+)/g,
       /export\s+\{([^}]+)\}/g,
-      /module\.exports\s*=\s*\{([^}]+)\}/
+      /module\.exports\s*=\s*\{([^}]+)\}/g
     ];
 
     for (const pattern of patterns) {
@@ -272,13 +260,9 @@ function getExportsFromGit(filePath, ref, options = {}) {
       }
     }
 
-    const result = [...new Set(exports)];
-    gitCache.set(cacheKey, result);
-    return result;
+    return [...new Set(exports)];
   } catch {
-    const emptyResult = [];
-    gitCache.set(cacheKey, emptyResult);
-    return emptyResult;
+    return [];
   }
 }
 
@@ -325,15 +309,17 @@ function checkChangelog(changedFiles, options = {}) {
 
   const hasUnreleased = changelog.includes('## [Unreleased]');
 
-  // Get recent commits
+  // Get recent commits - use spawnSync to avoid shell injection
   let recentCommits = [];
   try {
-    const output = execSync('git log --oneline -10 HEAD', {
+    const result = spawnSync('git', ['log', '--oneline', '-10', 'HEAD'], {
       cwd: basePath,
       encoding: 'utf8',
       stdio: ['pipe', 'pipe', 'pipe']
     });
-    recentCommits = output.trim().split('\n');
+    if (result.status === 0 && result.stdout) {
+      recentCommits = result.stdout.trim().split('\n');
+    }
   } catch {
     // Git command failed
   }
