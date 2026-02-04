@@ -213,14 +213,14 @@ while (iteration <= MAX_ITERATIONS) {
 ## Review Queue
 
 Store state at `{stateDir}/review-queue-{timestamp}.json`:
-```javascript
+```json
 {
-  status: 'open|resolved|blocked',
-  scope: { type: 'diff', files: [...] },
-  passes: ['code-quality', 'security', ...],
-  items: [/* findings */],
-  iteration: N,
-  stallCount: N
+  "status": "open|resolved|blocked",
+  "scope": { "type": "diff", "files": ["..."] },
+  "passes": ["code-quality", "security"],
+  "items": [],
+  "iteration": 0,
+  "stallCount": 0
 }
 ```
 

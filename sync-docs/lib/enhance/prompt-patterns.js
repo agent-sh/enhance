@@ -27,7 +27,8 @@ const EXAMPLE_TAG_REGEX = /<(?:good|bad)[_-]?example>([\s\S]*?)<\/(?:good|bad)[_
 const LOOKS_LIKE_JSON_START = /^\s*[\[{]/;
 const LOOKS_LIKE_JSON_CONTENT = /[:,]/;
 const NOT_JSON_KEYWORDS = /(function|const|let|var|if|for|while|class)\b/;
-const LOOKS_LIKE_JS = /\b(function|const|let|var|=>|async|await|class|import|export|require)\b/;
+// JS patterns require syntax context (not just keywords that might appear in JSON strings)
+const LOOKS_LIKE_JS = /\b(function\s*\(|const\s+\w+\s*=|let\s+\w+\s*=|var\s+\w+\s*=|=>\s*[{(]|async\s+function|await\s+\w|class\s+\w+\s*{|import\s+\{|export\s+(const|function|class|default)|require\s*\()/;
 const LOOKS_LIKE_PYTHON = /\b(def\s+\w+|import\s+\w+|from\s+\w+\s+import|class\s+\w+:|if\s+.*:|\s{4}|print\()\b/;
 
 // Memoization caches for performance (keyed by content hash)
@@ -503,30 +504,52 @@ const promptPatterns = {
     certainty: 'MEDIUM',
     autoFix: false,
     description: 'Important instructions buried in middle of prompt',
-    check: (content) => {
+    check: (content, filePath) => {
       if (!content || typeof content !== 'string') return null;
 
       const lines = content.split('\n').filter(l => l.trim());
       if (lines.length < 20) return null;
 
+      // Skip skill files with workflow phases (natural structure)
+      if (/SKILL\.md$/i.test(filePath || '') &&
+          /##?\s*(?:workflow|phase\s*\d)/i.test(content)) {
+        return null;
+      }
+
+      // Check if file has a dedicated Critical Rules section at the start
+      const first30Percent = lines.slice(0, Math.floor(lines.length * 0.3)).join('\n');
+      if (/##?\s*(?:critical|important)\s*rules?\b/i.test(first30Percent)) {
+        return null; // Has critical rules section at start, structure is intentional
+      }
+
       const middleStart = Math.floor(lines.length * 0.3);
       const middleEnd = Math.floor(lines.length * 0.7);
       const middleSection = lines.slice(middleStart, middleEnd).join('\n');
 
-      // Check for critical keywords in middle
+      // Check for critical keywords in middle (outside code blocks)
+      // Code blocks are excluded since they contain example code, not actual instructions
+      const middleWithoutCode = middleSection.replace(/```[\s\S]*?```/g, '');
+
+      // Design decision: Removed 'must' and 'required' from detection patterns
+      // These words are too common in imperative documentation and cause false positives
+      // Keeping 'important', 'critical', 'essential', 'mandatory' as stronger indicators
       const criticalPatterns = [
-        /\b(?:important|critical|must|essential|required|mandatory)\b/gi,
+        /\b(?:important|critical|essential|mandatory)\b/gi,
         /\b(?:always|never)\s+\w+/gi,
-        /\b(?:warning|caution|note)\s*:/gi
+        /\b(?:warning|caution)\s*:/gi
       ];
 
       let criticalInMiddle = 0;
       for (const pattern of criticalPatterns) {
-        const matches = middleSection.match(pattern);
+        const matches = middleWithoutCode.match(pattern);
         if (matches) criticalInMiddle += matches.length;
       }
 
-      if (criticalInMiddle >= 5) {
+      // Design decision: Threshold of 8 chosen based on analysis
+      // Original threshold of 5 flagged too many workflow files with legitimate
+      // middle content (phase descriptions, step details). 8 catches files with
+      // genuinely dense critical instructions in the middle.
+      if (criticalInMiddle >= 8) {
         return {
           issue: `${criticalInMiddle} critical instructions in the middle 40% of prompt`,
           fix: 'Move critical instructions to the beginning or end (lost-in-the-middle effect)'
@@ -716,7 +739,16 @@ const promptPatterns = {
         /\bthis (?:is|ensures?|prevents?|helps?)/gi,
         /\bto (?:ensure|prevent|avoid|maintain)/gi,
         /\bwhy:\s/gi,
-        /\*why\*/i
+        /\*why\*/i,
+        // Inline explanations after dashes: "Rule - Explanation with verb"
+        // Requires verb-like word (ending in s/es/ed/ing) to distinguish from bullet points
+        /[-–]\s+[A-Z][a-z]+(?:s|es|ed|ing)\s+\w+/g,
+        // Inline explanations in parens with prose (8+ chars, no code-like content)
+        /\([^)(){}\[\]]{8,}\)/g,
+        // Explicit WHY/rationale sections
+        /##?\s*(?:why|rationale|reason)/gi,
+        // "for X" explanations: "for efficiency", "for safety"
+        /\bfor\s+(?:efficiency|safety|performance|security|clarity|consistency|reliability|maintainability)/gi
       ];
 
       let whyCount = 0;
@@ -759,7 +791,14 @@ const promptPatterns = {
         /\bin case of conflict/i,
         /\bpriority\s*(?:order|:\s*\d)/i,
         /\b(?:highest|lowest)\s+priority\b/i,
-        /\b(?:first|second|third)\s+priority\b/i
+        /\b(?:first|second|third)\s+priority\b/i,
+        // Numbered rules section (implicit priority order)
+        /##\s*(?:critical|important)\s*rules?\s*\n+\s*1\.\s/i,
+        // Precedence language
+        /\btakes?\s+precedence\b/i,
+        /\boverride[sd]?\b/i,
+        // Ordered constraint list
+        /##\s*constraints?\s*\n+\s*1\.\s/i
       ];
 
       for (const pattern of priorityIndicators) {
@@ -768,11 +807,17 @@ const promptPatterns = {
         }
       }
 
-      // Only flag if there are multiple constraint sections
-      const constraintSections = (content.match(/##\s*(?:constraints?|rules?|requirements?)/gi) || []).length;
-      const mustClauses = (content.match(/\bmust\b/gi) || []).length;
+      // Only flag if there are multiple top-level constraint sections (H2 only, not H3+)
+      // Design decision: H3+ subsections are typically nested within a larger rules block
+      // and don't indicate separate conflicting constraint sets
+      const constraintSections = (content.match(/^##\s+(?:constraints?|rules?|requirements?)\b/gim) || []).length;
 
-      if (constraintSections >= 2 || mustClauses >= 8) {
+      // Design decision: Case-sensitive MUST to detect intentional emphasis only
+      // Lowercase 'must' is common in prose and doesn't indicate constraint emphasis
+      // Threshold of 10 chosen to avoid flagging files with few emphatic rules
+      const mustClauses = (content.match(/\bMUST\b/g) || []).length;
+
+      if (constraintSections >= 2 || mustClauses >= 10) {
         return {
           issue: 'Multiple constraint sections but no instruction priority order',
           fix: 'Add priority order: "In case of conflict: 1) Safety rules, 2) System instructions, 3) User requests"'
@@ -913,16 +958,31 @@ const promptPatterns = {
     check: (content) => {
       if (!content || typeof content !== 'string') return null;
 
-      // Check if requests JSON
-      const requestsJson = /\b(?:respond|output|return)\s+(?:with|in|as)?\s*JSON\b/i.test(content) ||
-                          /\bJSON\s+(?:object|response|format)\b/i.test(content);
+      // Check if requests JSON (exclude CLI flags and function descriptions)
+      // Exclude: "--output json", "analyzer returns JSON", "function returns JSON"
+      const requestsJson = (
+        (/\b(?:respond|output|return)\s+(?:with|in|as)?\s*JSON\b/i.test(content) &&
+         !/--output\s+json/i.test(content) &&
+         !/(?:analyzer|function|method)\s+returns?\s+JSON/i.test(content))
+      ) ||
+        /\bJSON\s+(?:object|response|format)\b/i.test(content);
 
       if (!requestsJson) return null;
 
       // Check if provides schema or example
       const hasSchema = /\bproperties\b.{1,200}\btype\b/is.test(content) ||
                        /```json\s*\n\s*\{/i.test(content) ||
-                       /<json[_-]?schema>/i.test(content);
+                       /<json[_-]?schema>/i.test(content) ||
+                       // JSON in JavaScript/TypeScript code blocks (quoted keys)
+                       /```(?:javascript|js|typescript|ts)\s*\n[\s\S]*?\{\s*\n?\s*"[a-zA-Z]+"/i.test(content) ||
+                       // JavaScript object literal assignment (const x = { prop: ... })
+                       /(?:const|let|var)\s+\w+\s*=\s*\{\s*\n\s*[a-zA-Z_]+\s*:/i.test(content) ||
+                       // JSON example with quoted property names in prose
+                       /\{\s*\n?\s*"[a-zA-Z_]+"\s*:\s*["\[\{]/i.test(content) ||
+                       // Inline schema description: { prop, prop, prop } or { prop: type, ... }
+                       /\{\s*[a-zA-Z_]+\s*,\s*[a-zA-Z_]+\s*,\s*[a-zA-Z_]+/i.test(content) ||
+                       // Interface-style: { prop: value } patterns with multiple lines
+                       /\{\s*\n\s+[a-zA-Z_]+\s*:\s*[\[\{"']/i.test(content);
 
       if (!hasSchema) {
         return {
@@ -958,10 +1018,17 @@ const promptPatterns = {
 
       // Skip SKILL.md files (implementation definitions, not tasks)
       // Skip agent files (they define behavior, verification is in workflow)
+      // Skip command files that delegate to agents (verification in agent)
       const isSkillOrAgent = /SKILL\.md$/i.test(filePath || '') ||
                             /[/\\]agents?[/\\]/i.test(filePath || '') ||
                             /^---\s*\nname:/m.test(content); // Agent frontmatter
       if (isSkillOrAgent) return null;
+
+      // Design decision: Skip commands that delegate to agents
+      // When a command uses Task({ subagent_type: ... }), verification responsibility
+      // belongs to the spawned agent, not the orchestrating command.
+      // This is project-specific syntax for awesome-slash plugin system.
+      if (/Task\s*\(/i.test(content) && /subagent_type/i.test(content)) return null;
 
       // Check for implementation/action indicators
       const isActionTask = /\b(?:implement|create|build|write|add|fix|update|refactor|modify)\b/i.test(content);
@@ -979,7 +1046,11 @@ const promptPatterns = {
         /\bcheck\s+(?:that|if)\b/i,
         /\brun\s+(?:the\s+)?tests?\b/i,
         /\bcompare\s+(?:to|with)\b/i,
-        /\bassert\b/i
+        /\bassert\b/i,
+        // Performance verification
+        /\bbaseline\b/i,
+        /\bbenchmark\b/i,
+        /\bprofil(?:e|ing)\b/i
       ];
 
       for (const pattern of verificationPatterns) {
