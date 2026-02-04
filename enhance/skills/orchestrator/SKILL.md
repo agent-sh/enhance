@@ -36,7 +36,7 @@ const flags = {
 };
 
 // Validate focus type
-const VALID_FOCUS = ['plugin', 'agent', 'claudemd', 'claude-memory', 'docs', 'prompt', 'hooks', 'skills'];
+const VALID_FOCUS = ['plugin', 'agent', 'claudemd', 'claude-memory', 'docs', 'prompt', 'hooks', 'skills', 'cross-file'];
 if (flags.focus && !VALID_FOCUS.includes(flags.focus)) {
   console.error(`Invalid --focus: "${flags.focus}". Valid: ${VALID_FOCUS.join(', ')}`);
   return;
@@ -57,7 +57,9 @@ const discovery = {
   prompts: await Glob({ pattern: '**/prompts/**/*.md', path: targetPath }) ||
            await Glob({ pattern: '**/commands/**/*.md', path: targetPath }),
   hooks: await Glob({ pattern: '**/hooks/**/*.md', path: targetPath }),
-  skills: await Glob({ pattern: '**/skills/**/SKILL.md', path: targetPath })
+  skills: await Glob({ pattern: '**/skills/**/SKILL.md', path: targetPath }),
+  // Cross-file runs if agents OR skills exist (analyzes relationships)
+  'cross-file': discovery.agents?.length || discovery.skills?.length ? ['enabled'] : []
 };
 ```
 
@@ -91,6 +93,7 @@ const autoLearned = loadAutoSuppressions(suppressionPath, projectId);
 | prompt | enhance:prompt-enhancer | opus | General prompts |
 | hooks | enhance:hooks-enhancer | opus | Hook safety |
 | skills | enhance:skills-enhancer | opus | Skill triggers |
+| cross-file | enhance:cross-file-enhancer | sonnet | Cross-file consistency |
 
 ```javascript
 const enhancerAgents = {
@@ -100,7 +103,8 @@ const enhancerAgents = {
   docs: 'enhance:docs-enhancer',
   prompt: 'enhance:prompt-enhancer',
   hooks: 'enhance:hooks-enhancer',
-  skills: 'enhance:skills-enhancer'
+  skills: 'enhance:skills-enhancer',
+  'cross-file': 'enhance:cross-file-enhancer'
 };
 
 const promises = [];
