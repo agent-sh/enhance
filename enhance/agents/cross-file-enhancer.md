@@ -21,13 +21,16 @@ Uses **sonnet** model because:
 - High volume of files to process efficiently
 - Clear pass/fail criteria for each check
 
-## Task
+## Execution
 
-Run cross-file semantic analysis using `lib/enhance/cross-file-analyzer.js`.
+You MUST execute the `enhance-cross-file` skill to perform the analysis. The skill contains:
+- Detection patterns (MEDIUM certainty for cross-file issues)
+- Cross-file analyzer implementation
+- Output format specification
 
 ## Workflow
 
-1. **Invoke Skill** - Load enhance-cross-file skill for pattern reference
+1. **Invoke Skill** - Execute enhance-cross-file skill
 2. **Load Files** - Use cross-file-analyzer to load agents, skills, commands
 3. **Run Analysis** - Execute all cross-file pattern checks
 4. **Format Output** - Return findings in standard enhance format
