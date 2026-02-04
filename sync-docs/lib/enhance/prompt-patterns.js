@@ -213,6 +213,17 @@ const promptPatterns = {
     check: (content) => {
       if (!content || typeof content !== 'string') return null;
 
+      // Strip lines documenting vague patterns (not actual vague instructions)
+      const lines = content.split('\n').filter(line => {
+        const trimmed = line.trim().toLowerCase();
+        // Skip lines listing vague terms as documentation
+        if (/vague\s*(instructions?|terms?|language|patterns?)\s*[:"]/.test(trimmed)) return false;
+        // Skip lines with quoted lists of vague words
+        if (/["']usually["'].*["']sometimes["']/.test(trimmed)) return false;
+        return true;
+      });
+      const filteredContent = lines.join('\n');
+
       const vaguePatterns = [
         { pattern: /\busually\b/gi, word: 'usually' },
         { pattern: /\bsometimes\b/gi, word: 'sometimes' },
@@ -230,7 +241,7 @@ const promptPatterns = {
 
       const found = [];
       for (const { pattern, word } of vaguePatterns) {
-        const matches = content.match(pattern);
+        const matches = filteredContent.match(pattern);
         if (matches) {
           found.push({ word, count: matches.length });
         }
@@ -262,6 +273,17 @@ const promptPatterns = {
     check: (content) => {
       if (!content || typeof content !== 'string') return null;
 
+      // Strip lines documenting bad patterns (not actual constraints)
+      const lines = content.split('\n').filter(line => {
+        const trimmed = line.trim().toLowerCase();
+        // Skip lines that document anti-patterns
+        if (/^-?\s*bad:|^\*\*bad\*\*:|^bad:/.test(trimmed)) return false;
+        // Skip lines in "Bad/Good" comparison format
+        if (/^-\s*"don't|^-\s*"never/.test(trimmed)) return false;
+        return true;
+      });
+      const filteredContent = lines.join('\n');
+
       // Find negative constraints
       const negativePatterns = [
         /\bdon['']t\s+\w+/gi,
@@ -273,15 +295,15 @@ const promptPatterns = {
 
       const negatives = [];
       for (const pattern of negativePatterns) {
-        const matches = content.match(pattern);
+        const matches = filteredContent.match(pattern);
         if (matches) {
           negatives.push(...matches.slice(0, 2));
         }
       }
 
       // Check if there are positive alternatives nearby
-      const positiveIndicators = /\binstead\b|\brather\b|\buse\b.*\binstead\b/gi;
-      const hasAlternatives = positiveIndicators.test(content);
+      const positiveIndicators = /\binstead\b|\brather\b|\buse\b.*\binstead\b|\bonly\s+\w+/gi;
+      const hasAlternatives = positiveIndicators.test(filteredContent);
 
       if (negatives.length >= 5 && !hasAlternatives) {
         return {
@@ -304,23 +326,32 @@ const promptPatterns = {
     certainty: 'HIGH',
     autoFix: true,
     description: 'No clear output format specification',
-    check: (content) => {
+    check: (content, filePath) => {
       if (!content || typeof content !== 'string') return null;
 
-      // Skip workflow orchestrators that spawn agents rather than produce output
-      const isOrchestrator = /##\s*Phase\s+\d+|Task\(\{|spawn.*agent|subagent_type|await Task\(/i.test(content);
+      // Skip workflow orchestrators that spawn agents/skills rather than produce output directly
+      const isOrchestrator = /##\s*Phase\s+\d+|Task\(\{|spawn.*agent|subagent_type|await Task\(|invoke.*skill|Skill\s*tool/i.test(content);
       if (isOrchestrator) return null;
+
+      // Skip reference docs and hooks (not prompts that produce conversational output)
+      const isReferenceOrHook = /[/\\](?:references?|hooks?)[/\\]/i.test(filePath || '') ||
+                                /^##?\s*(?:reference|knowledge|background)/im.test(content);
+      if (isReferenceOrHook) return null;
 
       // Check for output format indicators
       const outputIndicators = [
-        /##\s*output\s*format/i,
+        /##\s*output\s*(?:format|templates?|expectations?)/i,
         /##\s*response\s*format/i,
+        /##\s*(?:issue|report)\s*format/i,
         /##\s*format/i,
+        /##\s*example\s*(?:input\/)?output/i,
         /\brespond\s+(?:with|in)\s+(?:JSON|XML|markdown|YAML)/i,
+        /\boutput\s+a\s+(?:comprehensive|detailed|structured)/i,
         /\boutput\s*:\s*```/i,
         /<output_format>/i,
         /<response_format>/i,
-        /your\s+(?:response|output)\s+should\s+(?:be|follow)/i
+        /your\s+(?:response|output)\s+should\s+(?:be|follow)/i,
+        /\breturn(?:s|ing)?\s+(?:JSON|structured|formatted)/i
       ];
 
       for (const pattern of outputIndicators) {
@@ -350,58 +381,45 @@ const promptPatterns = {
     category: 'clarity',
     certainty: 'HIGH',
     autoFix: true,
-    description: 'Excessive CAPS or emphasis markers that may cause over-indexing',
+    description: 'Excessive aggressive emphasis that may cause over-indexing',
     check: (content) => {
       if (!content || typeof content !== 'string') return null;
 
-      // Skip workflow enforcement contexts where emphasis is intentional
-      const hasWorkflowGates = /WORKFLOW\s+(?:ENFORCEMENT|GATES)|MANDATORY.*GATES|agents?\s+MUST\s+NOT/i.test(content);
-      const isWorkflowDoc = /##\s*Phase\s+\d+|Task\(\{|subagent_type/i.test(content);
-
-      // Find CAPS words (3+ chars, excluding headings and code)
-      const capsPattern = /\b[A-Z]{3,}\b/g;
-      const capsMatches = content.match(capsPattern) || [];
-
-      // Filter out common acceptable caps (acronyms, code, workflow terms, file names)
-      const acceptableCaps = [
-        // Acronyms
-        'API', 'JSON', 'XML', 'HTML', 'CSS', 'URL', 'HTTP', 'HTTPS', 'SQL', 'CLI', 'SDK', 'JWT', 'UUID', 'REST', 'YAML', 'EOF', 'MCP', 'AST', 'RAG', 'LLM', 'CoT', 'SSO', 'OAuth', 'SSH', 'GPT', 'IDE', 'NPM', 'GIT',
-        // Code markers
-        'TODO', 'FIXME', 'NOTE', 'HACK', 'XXX', 'TBD',
-        // File names (common AI tool conventions)
-        'README', 'CLAUDE', 'AGENTS', 'CHANGELOG', 'LICENSE', 'CONTRIBUTING', 'SKILL', 'RESEARCH',
-        // Constraint keywords (intentional emphasis in prompts)
-        'CRITICAL', 'MUST', 'NOT', 'STOP', 'MANDATORY', 'SKIP', 'NEVER', 'ALWAYS', 'REQUIRED', 'IMPORTANT', 'HIGH', 'MEDIUM', 'LOW', 'ONLY', 'ALL', 'ANY', 'NONE',
-        // Status/log markers
-        'WARN', 'ERROR', 'INFO', 'DEBUG', 'FATAL', 'PASS', 'FAIL', 'SUCCESS', 'PENDING', 'BLOCKED',
-        // Domain terms (common in code/security contexts)
-        'SECURITY', 'ISSUES', 'PUBLIC', 'PRIVATE', 'INTERNAL', 'EXTERNAL', 'TRUE', 'FALSE', 'NULL', 'UNDEFINED'
-      ];
-      const aggressiveCaps = capsMatches.filter(c => !acceptableCaps.includes(c));
-
-      // Check for excessive exclamation marks
-      const exclamations = (content.match(/!{2,}/g) || []).length;
-
-      // Check for aggressive phrases
-      const aggressivePhrases = [
-        /\bABSOLUTELY\b/gi,
-        /\bEXTREMELY\s+IMPORTANT\b/gi
+      // Detect specific aggressive patterns (CAPS only, not lowercase)
+      const aggressivePatterns = [
+        // Intensifiers that add no value (CAPS only)
+        { pattern: /\bABSOLUTELY\b/g, word: 'ABSOLUTELY' },
+        { pattern: /\bTOTALLY\b/g, word: 'TOTALLY' },
+        { pattern: /\bCOMPLETELY\b/g, word: 'COMPLETELY' },
+        { pattern: /\bENTIRELY\b/g, word: 'ENTIRELY' },
+        { pattern: /\bDEFINITELY\b/g, word: 'DEFINITELY' },
+        { pattern: /\bEXTREMELY\b/g, word: 'EXTREMELY' },
+        // Aggressive phrases (CAPS only)
+        { pattern: /\bEXTREMELY\s+IMPORTANT\b/g, word: 'EXTREMELY IMPORTANT' },
+        { pattern: /\bSUPER\s+IMPORTANT\b/g, word: 'SUPER IMPORTANT' },
+        { pattern: /\bVERY\s+VERY\b/g, word: 'VERY VERY' },
+        // Excessive punctuation
+        { pattern: /!{3,}/g, word: '!!!' },
+        { pattern: /\?{3,}/g, word: '???' }
       ];
 
-      let aggressiveCount = aggressiveCaps.length + exclamations;
-      for (const pattern of aggressivePhrases) {
+      const found = [];
+      for (const { pattern, word } of aggressivePatterns) {
         const matches = content.match(pattern);
-        if (matches) aggressiveCount += matches.length;
+        if (matches) {
+          found.push({ word, count: matches.length });
+        }
       }
 
-      // Higher threshold for workflow docs (intentional emphasis for gates)
-      const threshold = (hasWorkflowGates || isWorkflowDoc) ? 50 : 5;
+      const totalCount = found.reduce((sum, f) => sum + f.count, 0);
 
-      if (aggressiveCount >= threshold) {
+      // Only flag if multiple instances (threshold: 3+)
+      if (totalCount >= 3) {
+        const examples = found.slice(0, 3).map(f => `"${f.word}" (${f.count}x)`);
         return {
-          issue: `${aggressiveCount} instances of aggressive emphasis (CAPS, !!, CRITICAL)`,
+          issue: `${totalCount} instances of aggressive emphasis: ${examples.join(', ')}`,
           fix: 'Use normal language - models respond well to clear instructions without shouting',
-          details: aggressiveCaps.slice(0, 5)
+          details: found.map(f => f.word)
         };
       }
       return null;

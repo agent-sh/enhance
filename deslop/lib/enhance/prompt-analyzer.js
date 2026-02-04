@@ -119,7 +119,8 @@ function analyzePrompt(promptPath, options = {}) {
     }
 
     // Run the check on content with bad examples stripped
-    const result = pattern.check(contentForAnalysis);
+    // Pass file path for patterns that need path-based filtering
+    const result = pattern.check(contentForAnalysis, promptPath);
 
     if (result) {
       const issue = {
