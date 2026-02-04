@@ -363,13 +363,17 @@ const promptPatterns = {
       // Filter out common acceptable caps (acronyms, code, workflow terms, file names)
       const acceptableCaps = [
         // Acronyms
-        'API', 'JSON', 'XML', 'HTML', 'CSS', 'URL', 'HTTP', 'HTTPS', 'SQL', 'CLI', 'SDK', 'JWT', 'UUID', 'REST', 'YAML', 'EOF', 'MCP', 'AST', 'RAG', 'LLM', 'CoT', 'SSO', 'OAuth',
+        'API', 'JSON', 'XML', 'HTML', 'CSS', 'URL', 'HTTP', 'HTTPS', 'SQL', 'CLI', 'SDK', 'JWT', 'UUID', 'REST', 'YAML', 'EOF', 'MCP', 'AST', 'RAG', 'LLM', 'CoT', 'SSO', 'OAuth', 'SSH', 'GPT', 'IDE', 'NPM', 'GIT',
         // Code markers
-        'TODO', 'FIXME', 'NOTE', 'HACK', 'XXX',
+        'TODO', 'FIXME', 'NOTE', 'HACK', 'XXX', 'TBD',
         // File names (common AI tool conventions)
-        'README', 'CLAUDE', 'AGENTS', 'CHANGELOG', 'LICENSE', 'CONTRIBUTING', 'SKILL',
+        'README', 'CLAUDE', 'AGENTS', 'CHANGELOG', 'LICENSE', 'CONTRIBUTING', 'SKILL', 'RESEARCH',
         // Constraint keywords (intentional emphasis in prompts)
-        'CRITICAL', 'MUST', 'NOT', 'STOP', 'MANDATORY', 'SKIP', 'NEVER', 'ALWAYS', 'REQUIRED', 'IMPORTANT', 'HIGH', 'MEDIUM', 'LOW'
+        'CRITICAL', 'MUST', 'NOT', 'STOP', 'MANDATORY', 'SKIP', 'NEVER', 'ALWAYS', 'REQUIRED', 'IMPORTANT', 'HIGH', 'MEDIUM', 'LOW', 'ONLY', 'ALL', 'ANY', 'NONE',
+        // Status/log markers
+        'WARN', 'ERROR', 'INFO', 'DEBUG', 'FATAL', 'PASS', 'FAIL', 'SUCCESS', 'PENDING', 'BLOCKED',
+        // Domain terms (common in code/security contexts)
+        'SECURITY', 'ISSUES', 'PUBLIC', 'PRIVATE', 'INTERNAL', 'EXTERNAL', 'TRUE', 'FALSE', 'NULL', 'UNDEFINED'
       ];
       const aggressiveCaps = capsMatches.filter(c => !acceptableCaps.includes(c));
 
@@ -413,7 +417,7 @@ const promptPatterns = {
   missing_xml_structure: {
     id: 'missing_xml_structure',
     category: 'structure',
-    certainty: 'HIGH',
+    certainty: 'MEDIUM', // Context-dependent - not all prompts need XML
     autoFix: true,
     description: 'Complex prompt without XML tags for structure',
     check: (content) => {
@@ -523,7 +527,7 @@ const promptPatterns = {
   missing_examples: {
     id: 'missing_examples',
     category: 'examples',
-    certainty: 'HIGH',
+    certainty: 'MEDIUM', // Context-dependent - not all prompts need examples
     autoFix: true,
     description: 'Complex prompt without examples (few-shot)',
     check: (content) => {
@@ -767,6 +771,12 @@ const promptPatterns = {
     check: (content) => {
       if (!content || typeof content !== 'string') return null;
 
+      // Skip if this is documentation ABOUT CoT (describes the anti-pattern)
+      // These files explain why step-by-step is redundant, not actually use it
+      if (/step[- ]by[- ]step.*(?:is\s+)?redundant|redundant.*step[- ]by[- ]step/i.test(content)) {
+        return null;
+      }
+
       // Check for explicit CoT instructions
       const cotPatterns = [
         /\bthink\s+step[- ]by[- ]step\b/gi,
@@ -909,7 +919,7 @@ const promptPatterns = {
   missing_verification_criteria: {
     id: 'missing_verification_criteria',
     category: 'clarity',
-    certainty: 'HIGH',
+    certainty: 'MEDIUM', // Context-dependent - not all prompts are task-oriented
     autoFix: true,
     description: 'Task lacks verification criteria (tests, screenshots, expected output)',
     check: (content) => {
@@ -1127,6 +1137,10 @@ const promptPatterns = {
 
         // Skip very large blocks (>50KB) for performance
         if (block.code.length > 50000) continue;
+
+        // Skip blocks with placeholder syntax (common in documentation)
+        // e.g., [...], {...}, <...>, "...", etc.
+        if (/\[\.\.\.\]|\{\.\.\.\}|<\.\.\.>|"\.\.\."|\.\.\./g.test(block.code)) continue;
 
         try {
           JSON.parse(block.code);
