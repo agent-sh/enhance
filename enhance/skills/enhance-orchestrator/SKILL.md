@@ -84,19 +84,24 @@ const autoLearned = loadAutoSuppressions(suppressionPath, projectId);
 
 ### Phase 4: Launch Enhancers in Parallel
 
-| Type | Agent | Model | Purpose |
-|------|-------|-------|---------|
-| plugin | enhance:plugin-enhancer | sonnet | Tool schemas, MCP |
-| agent | enhance:agent-enhancer | opus | Agent prompts |
-| claudemd | enhance:claudemd-enhancer | opus | Project memory |
-| docs | enhance:docs-enhancer | opus | Documentation |
-| prompt | enhance:prompt-enhancer | opus | General prompts |
-| hooks | enhance:hooks-enhancer | opus | Hook safety |
-| skills | enhance:skills-enhancer | opus | Skill triggers |
-| cross-file | enhance:cross-file-enhancer | sonnet | Cross-file consistency |
+**CRITICAL**: MUST spawn these EXACT agents using Task(). Do NOT use Explore or other agents.
+
+| Focus Type | Agent to Spawn | Model | JS Analyzer |
+|------------|----------------|-------|-------------|
+| `plugin` | `enhance:plugin-enhancer` | sonnet | `lib/enhance/plugin-analyzer.js` |
+| `agent` | `enhance:agent-enhancer` | opus | `lib/enhance/agent-analyzer.js` |
+| `claudemd` | `enhance:claudemd-enhancer` | opus | `lib/enhance/projectmemory-analyzer.js` |
+| `docs` | `enhance:docs-enhancer` | opus | `lib/enhance/docs-analyzer.js` |
+| `prompt` | `enhance:prompt-enhancer` | opus | `lib/enhance/prompt-analyzer.js` |
+| `hooks` | `enhance:hooks-enhancer` | opus | `lib/enhance/hook-analyzer.js` |
+| `skills` | `enhance:skills-enhancer` | opus | `lib/enhance/skill-analyzer.js` |
+| `cross-file` | `enhance:cross-file-enhancer` | sonnet | `lib/enhance/cross-file-analyzer.js` |
+
+Each agent has `Bash(node:*)` to run its JS analyzer. Do NOT substitute with Explore agents.
 
 ```javascript
-const enhancerAgents = {
+// EXACT agent mapping - do not change
+const ENHANCER_AGENTS = {
   plugin: 'enhance:plugin-enhancer',
   agent: 'enhance:agent-enhancer',
   claudemd: 'enhance:claudemd-enhancer',
@@ -109,14 +114,16 @@ const enhancerAgents = {
 
 const promises = [];
 
-for (const [type, agent] of Object.entries(enhancerAgents)) {
+for (const [type, agentType] of Object.entries(ENHANCER_AGENTS)) {
   if (focus && focus !== type) continue;
   if (!discovery[type]?.length) continue;
 
+  // MUST use exact subagent_type - these agents have Bash(node:*) to run JS analyzers
   promises.push(Task({
-    subagent_type: agent,
-    prompt: `Invoke your skill to analyze ${type} in ${targetPath}.
-Use the Skill tool to execute your enhance-* skill which runs the JavaScript analyzer.
+    subagent_type: agentType,
+    prompt: `Analyze ${type} in ${targetPath}.
+MUST use Skill tool to invoke your enhance-* skill.
+The skill runs the JavaScript analyzer and returns structured findings.
 verbose: ${flags.verbose}
 Return JSON: { "enhancerType": "${type}", "findings": [...], "summary": { high, medium, low } }`
   }));
