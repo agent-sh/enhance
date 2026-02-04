@@ -385,6 +385,7 @@ function fixAggressiveEmphasis(content) {
   if (!content) return content;
 
   // Replace aggressive CAPS phrases with normal case
+  // Note: These should align with words detected by aggressive_emphasis pattern
   const replacements = [
     { pattern: /\bCRITICAL\b/g, replacement: 'critical' },
     { pattern: /\bIMPORTANT\b/g, replacement: 'important' },
@@ -395,7 +396,16 @@ function fixAggressiveEmphasis(content) {
     { pattern: /\bMANDATORY\b/g, replacement: 'mandatory' },
     { pattern: /\bESSENTIAL\b/g, replacement: 'essential' },
     { pattern: /\bWARNING\b/g, replacement: 'warning' },
-    { pattern: /\bCAUTION\b/g, replacement: 'caution' }
+    { pattern: /\bCAUTION\b/g, replacement: 'caution' },
+    // Additional aggressive words detected by pattern
+    { pattern: /\bABSOLUTELY\b/g, replacement: 'absolutely' },
+    { pattern: /\bTOTALLY\b/g, replacement: 'totally' },
+    { pattern: /\bEXTREMELY\b/g, replacement: 'extremely' },
+    { pattern: /\bDEFINITELY\b/g, replacement: 'definitely' },
+    { pattern: /\bCOMPLETELY\b/g, replacement: 'completely' },
+    { pattern: /\bENTIRELY\b/g, replacement: 'entirely' },
+    { pattern: /\bFORBIDDEN\b/g, replacement: 'forbidden' },
+    { pattern: /\bURGENT\b/g, replacement: 'urgent' }
   ];
 
   let result = content;

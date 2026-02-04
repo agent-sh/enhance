@@ -114,7 +114,7 @@ const CRITICAL_PATTERNS = [
 const SUBAGENT_PATTERN = /subagent_type\s*[=:]\s*["']([^"']+)["']/g;
 
 /** Pre-compiled patterns for cleaning content */
-const BAD_EXAMPLE_TAG_PATTERN = /<bad[- ]?example>[\s\S]*?<\/bad[- ]?example>/gi;
+const BAD_EXAMPLE_TAG_PATTERN = /<bad[_\- ]?example>[\s\S]*?<\/bad[_\- ]?example>/gi;
 const BAD_EXAMPLE_CODE_PATTERN = /```[^\n]*bad[^\n]*\n[\s\S]*?```/gi;
 
 // ============================================
