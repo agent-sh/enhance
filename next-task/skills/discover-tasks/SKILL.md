@@ -1,6 +1,6 @@
 ---
 name: discover-tasks
-description: "Use when discovering and prioritizing tasks from configured sources. Handles GitHub, GitLab, local files, and custom sources."
+description: "Use when user asks to \"discover tasks\", \"find next task\", or \"prioritize issues\". Discovers and ranks tasks from GitHub, GitLab, local files, and custom sources."
 version: 5.0.0
 ---
 

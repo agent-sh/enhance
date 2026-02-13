@@ -1,6 +1,6 @@
 ---
 name: validate-delivery
-description: "Use when validating task completion before shipping. Runs tests, build, and requirement checks. Returns pass/fail with fix instructions."
+description: "Use when user asks to \"validate delivery\", \"check readiness\", or \"verify completion\". Runs tests, build, and requirement checks with pass/fail instructions."
 version: 5.0.0
 ---
 
