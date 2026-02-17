@@ -141,7 +141,12 @@ If context resolved to "file":
           - label: "README.md"          description: "Project readme"
   ```
   The user can type any path via "Other".
-  After getting the path, validate it exists using the Read tool.
+  After getting the path:
+  1. Reject absolute paths outside the current working directory
+  2. Reject paths containing `..` that escape the project root
+  3. Reject UNC paths (`\\` or `//` prefix)
+  4. Validate the file exists using the Read tool
+  If the path escapes the project: `[ERROR] Context file must be within the project directory`
   If the file doesn't exist: `[ERROR] Context file not found: {PATH}`
   If valid, set context to `file={user_provided_path}`.
 
