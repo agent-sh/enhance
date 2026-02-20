@@ -70,7 +70,8 @@ function transformBodyForOpenCode(content, repoRoot) {
       if (code.includes('require(') || code.includes('Task(') ||
           code.includes('const ') || code.includes('let ') ||
           code.includes('function ') || code.includes('=>') ||
-          code.includes('async ') || code.includes('await ')) {
+          code.includes('async ') || code.includes('await ') ||
+          code.includes('completePhase')) {
 
         let instructions = '';
 
@@ -94,6 +95,10 @@ function transformBodyForOpenCode(content, repoRoot) {
 
         if (code.includes('EnterPlanMode')) {
           instructions += '- Use EnterPlanMode for user approval\n';
+        }
+
+        if (code.includes('completePhase')) {
+          instructions += '- Call `workflowState.completePhase(result)` to advance workflow state\n';
         }
 
         if (instructions) {

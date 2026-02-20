@@ -1,5 +1,6 @@
 ---
 name: orchestrate-review
+version: 5.1.0
 description: "Use when user asks to \"deep review the code\", \"thorough code review\", \"multi-pass review\", or when orchestrating the Phase 9 review loop. Provides review pass definitions (code quality, security, performance, test coverage), signal detection patterns, and iteration algorithms."
 metadata:
   short-description: "Multi-pass code review orchestration"
@@ -152,8 +153,8 @@ function aggregateFindings(results) {
 **Security Note**: Fixes are applied by the orchestrator using standard Edit tool permissions. Critical/high severity findings should be reviewed before applying - do not blindly apply LLM-suggested fixes to security-sensitive code. The orchestrator validates each fix against the original issue.
 
 ```javascript
-// 5 iterations balances thoroughness vs cost; 2 stalls indicates fixes aren't progressing
-const MAX_ITERATIONS = 5, MAX_STALLS = 2;
+// 5 iterations balances thoroughness vs cost; 1 stall (2 consecutive identical-hash iterations) indicates fixes aren't progressing
+const MAX_ITERATIONS = 5, MAX_STALLS = 1;
 let iteration = 1, stallCount = 0, lastHash = null;
 
 while (iteration <= MAX_ITERATIONS) {
@@ -169,7 +170,7 @@ while (iteration <= MAX_ITERATIONS) {
 
   // 3. Check if done
   if (findings.openCount === 0) {
-    workflowState.updateFlow({ reviewResult: { approved: true, iterations: iteration } });
+    workflowState.completePhase({ approved: true, iterations: iteration });
     break;
   }
 
@@ -198,11 +199,31 @@ while (iteration <= MAX_ITERATIONS) {
 
   // 8. Check limits
   if (stallCount >= MAX_STALLS || iteration >= MAX_ITERATIONS) {
-    workflowState.updateFlow({
-      reviewResult: { approved: false, blocked: true,
-                     reason: stallCount >= MAX_STALLS ? 'stall-detected' : 'iteration-limit',
-                     remaining: findings.totals }
+    const reason = stallCount >= MAX_STALLS ? 'stall-detected' : 'iteration-limit';
+    console.log(`[BLOCKED] Review loop ended: ${reason}. Remaining: ${JSON.stringify(findings.totals)}`);
+    // Ask the user before advancing - do not silently proceed to delivery-validation
+    const question = `Review loop blocked (${reason}). Open issues remain. How should we proceed?`;
+    const response = AskUserQuestion({
+      questions: [{
+        question,
+        header: 'Review Blocked',
+        multiSelect: false,
+        options: [
+          { label: 'Override and proceed', description: 'Advance to delivery-validation with unresolved issues (risky)' },
+          { label: 'Abort workflow', description: 'Stop here; open issues must be fixed manually' }
+        ]
+      }]
     });
+    // AskUserQuestion returns { answers: { [questionText]: selectedLabel } }
+    const choice = response.answers?.[question] ?? response[question];
+    if (choice === 'Override and proceed') {
+      workflowState.completePhase({
+        approved: false, blocked: true, overridden: true,
+        reason, remaining: findings.totals
+      });
+    } else {
+      workflowState.failPhase(`Review blocked: ${reason}. ${JSON.stringify(findings.totals)} issues remain.`);
+    }
     break;
   }
 
