@@ -1,0 +1,22 @@
+{
+  "name": "enhance",
+  "description": "Master enhancement orchestrator: parallel analyzer execution for plugins, agents, docs, CLAUDE.md, and prompts with unified reporting",
+  "version": "1.0.0",
+  "owner": {
+    "name": "Avi Fenesh",
+    "url": "https://github.com/avifenesh"
+  },
+  "repository": "https://github.com/agent-sh/enhance",
+  "keywords": [
+    "enhance"
+  ],
+  "plugins": [
+    {
+      "name": "enhance",
+      "source": ".",
+      "description": "Master enhancement orchestrator: parallel analyzer execution for plugins, agents, docs, CLAUDE.md, and prompts with unified reporting",
+      "version": "1.0.0",
+      "category": "development"
+    }
+  ]
+}
