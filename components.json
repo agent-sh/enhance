@@ -1,0 +1,26 @@
+{
+  "agents": [
+    "agent-enhancer",
+    "claudemd-enhancer",
+    "cross-file-enhancer",
+    "docs-enhancer",
+    "hooks-enhancer",
+    "plugin-enhancer",
+    "prompt-enhancer",
+    "skills-enhancer"
+  ],
+  "skills": [
+    "enhance-agent-prompts",
+    "enhance-claude-memory",
+    "enhance-cross-file",
+    "enhance-docs",
+    "enhance-hooks",
+    "enhance-orchestrator",
+    "enhance-plugins",
+    "enhance-prompts",
+    "enhance-skills"
+  ],
+  "commands": [
+    "enhance"
+  ]
+}
