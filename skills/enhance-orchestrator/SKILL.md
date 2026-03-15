@@ -114,9 +114,33 @@ const ENHANCER_AGENTS = {
 
 const promises = [];
 
+// Pre-fetch doc-drift for docs-enhancer
+let docDriftContext = '';
+try {
+  const { binary } = require('@agentsys/lib');
+  const fs = require('fs');
+  const path = require('path');
+  const cwd = process.cwd();
+  const stateDir = ['.claude', '.opencode', '.codex'].find(d => fs.existsSync(path.join(cwd, d))) || '.claude';
+  const mapFile = path.join(cwd, stateDir, 'repo-intel.json');
+
+  if (fs.existsSync(mapFile)) {
+    const docDrift = JSON.parse(binary.runAnalyzer(['repo-intel', 'query', 'doc-drift', '--top', '20', '--map-file', mapFile, cwd]));
+    if (docDrift.length > 0) {
+      const stale = docDrift.filter(d => d.codeCoupling === 0).map(d => d.path);
+      if (stale.length > 0) {
+        docDriftContext = '\nDoc-drift data (docs with zero code coupling, likely stale): ' + stale.join(', ');
+      }
+    }
+  }
+} catch (e) { /* unavailable */ }
+
 for (const [type, agentType] of Object.entries(ENHANCER_AGENTS)) {
   if (focus && focus !== type) continue;
   if (!discovery[type]?.length) continue;
+
+  // Append doc-drift context only for docs enhancer
+  const extraContext = type === 'docs' ? docDriftContext : '';
 
   // MUST use exact subagent_type - these agents have Bash(node:*) to run JS analyzers
   promises.push(Task({
@@ -124,7 +148,7 @@ for (const [type, agentType] of Object.entries(ENHANCER_AGENTS)) {
     prompt: `Analyze ${type} in ${targetPath}.
 MUST use Skill tool to invoke your enhance-* skill.
 The skill runs the JavaScript analyzer and returns structured findings.
-verbose: ${flags.verbose}
+verbose: ${flags.verbose}${extraContext}
 Return JSON: { "enhancerType": "${type}", "findings": [...], "summary": { high, medium, low } }`
   }));
 }
