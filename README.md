@@ -126,8 +126,8 @@ Analyze SKILL.md files for required metadata and trigger clarity.
 | `docs-enhancer` | RAG optimization, readability, token efficiency | opus |
 | `plugin-enhancer` | MCP schemas, security patterns, structure | sonnet |
 | `claudemd-enhancer` | Project memory validation, cross-platform | opus |
-| `hooks-enhancer` | Hook frontmatter, structure, safety | sonnet |
-| `skills-enhancer` | SKILL.md structure, trigger phrases | sonnet |
+| `hooks-enhancer` | Hook frontmatter, structure, safety | opus |
+| `skills-enhancer` | SKILL.md structure, trigger phrases | opus |
 
 ## Certainty Levels
 
