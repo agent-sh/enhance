@@ -114,23 +114,34 @@ const ENHANCER_AGENTS = {
 
 const promises = [];
 
-// Pre-fetch doc-drift for docs-enhancer
+// Pre-fetch repo-intel data for enhancers
 let docDriftContext = '';
+let conventionsContext = '';
 try {
   const { binary } = require('@agentsys/lib');
+  const { getStateDirPath } = require('@agentsys/lib/platform/state-dir');
   const fs = require('fs');
-  const path = require('path');
   const cwd = process.cwd();
-  const stateDir = ['.claude', '.opencode', '.codex'].find(d => fs.existsSync(path.join(cwd, d))) || '.claude';
-  const mapFile = path.join(cwd, stateDir, 'repo-intel.json');
+  const mapFile = require('path').join(getStateDirPath(cwd), 'repo-intel.json');
+  const q = (args) => { try { return JSON.parse(binary.runAnalyzer(args)); } catch { return null; } };
 
   if (fs.existsSync(mapFile)) {
-    const docDrift = JSON.parse(binary.runAnalyzer(['repo-intel', 'query', 'doc-drift', '--top', '20', '--map-file', mapFile, cwd]));
-    if (docDrift.length > 0) {
+    const docDrift = q(['repo-intel', 'query', 'doc-drift', '--top', '20', '--map-file', mapFile, cwd]);
+    const staleDocs = q(['repo-intel', 'query', 'stale-docs', '--top', '20', '--map-file', mapFile, cwd]);
+    const conventions = q(['repo-intel', 'query', 'conventions', '--map-file', mapFile, cwd]);
+
+    if (docDrift && docDrift.length > 0) {
       const stale = docDrift.filter(d => d.codeCoupling === 0).map(d => d.path);
       if (stale.length > 0) {
-        docDriftContext = '\nDoc-drift data (docs with zero code coupling, likely stale): ' + stale.join(', ');
+        docDriftContext = '\nDoc-drift (docs with zero code coupling, likely stale): ' + stale.join(', ');
       }
+    }
+    if (staleDocs && staleDocs.length > 0) {
+      docDriftContext += '\nStale doc refs (symbol-level):\n' +
+        staleDocs.slice(0, 10).map(s => `  ${s.doc}:${s.line} "${s.reference}" [${s.issue}]`).join('\n');
+    }
+    if (conventions) {
+      conventionsContext = '\nProject conventions: ' + JSON.stringify(conventions);
     }
   }
 } catch (e) { /* unavailable */ }
@@ -139,8 +150,10 @@ for (const [type, agentType] of Object.entries(ENHANCER_AGENTS)) {
   if (focus && focus !== type) continue;
   if (!discovery[type]?.length) continue;
 
-  // Append doc-drift context only for docs enhancer
-  const extraContext = type === 'docs' ? docDriftContext : '';
+  // Append relevant context per enhancer type
+  let extraContext = '';
+  if (type === 'docs') extraContext = docDriftContext;
+  if (['agent-prompts', 'skills', 'prompts'].includes(type)) extraContext = conventionsContext;
 
   // MUST use exact subagent_type - these agents have Bash(node:*) to run JS analyzers
   promises.push(Task({
