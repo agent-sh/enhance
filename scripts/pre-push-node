@@ -4,6 +4,12 @@
 
 cd "$(git rev-parse --show-toplevel)" || exit 1
 
+# Skip gracefully if no test script is defined (CI will still validate)
+if ! node -e "const p=require('./package.json'); process.exit(p.scripts && p.scripts.test ? 0 : 1)" 2>/dev/null; then
+  echo "[INFO] No 'test' script in package.json - skipping pre-push tests (CI will validate)"
+  exit 0
+fi
+
 echo "[INFO] Running pre-push tests..."
 npm test
 exit $?
