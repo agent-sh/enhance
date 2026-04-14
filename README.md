@@ -10,14 +10,14 @@ The enhance plugin provides specialized analyzers for different content types, i
 
 ```
 /enhance
-    │
-    ├─→ /enhance:agent   → Agent-specific analysis (frontmatter, tool restrictions)
-    ├─→ /enhance:prompt  → General prompt patterns (clarity, structure, examples)
-    ├─→ /enhance:docs    → Documentation analysis (RAG optimization, readability)
-    ├─→ /enhance:plugin  → Plugin structure (MCP tools, security patterns)
-    ├─→ /enhance:claudemd → Project memory optimization (CLAUDE.md/AGENTS.md)
-    ├─→ /enhance:hooks   → Hook definitions (frontmatter, safety)
-    └─→ /enhance:skills  → SKILL.md structure and triggers
+  -> /enhance:agent       - Agent-specific analysis (frontmatter, tool restrictions)
+  -> /enhance:prompt      - General prompt patterns (clarity, structure, examples)
+  -> /enhance:docs        - Documentation analysis (RAG optimization, readability)
+  -> /enhance:plugin      - Plugin structure (MCP tools, security patterns)
+  -> /enhance:claudemd    - Project memory optimization (CLAUDE.md/AGENTS.md)
+  -> /enhance:hooks       - Hook definitions (frontmatter, safety)
+  -> /enhance:skills      - SKILL.md structure and triggers
+  -> /enhance:cross-file  - Cross-file consistency (tools, agents, rules)
 ```
 
 **Analysis depth**: Certainty-based findings (HIGH, MEDIUM, LOW)
@@ -117,6 +117,16 @@ Analyze SKILL.md files for required metadata and trigger clarity.
 
 **Detects**: Missing frontmatter, missing name/description, missing trigger phrase
 
+### `/enhance:cross-file`
+
+Analyze cross-file semantic consistency across agents, skills, and commands.
+
+```
+/enhance:cross-file                 # Check cross-file consistency
+```
+
+**Detects**: Tools vs frontmatter mismatches, broken agent references, duplicate rules, contradictions
+
 ## Agents
 
 | Agent | Purpose | Model |
@@ -128,6 +138,7 @@ Analyze SKILL.md files for required metadata and trigger clarity.
 | `claudemd-enhancer` | Project memory validation, cross-platform | opus |
 | `hooks-enhancer` | Hook frontmatter, structure, safety | opus |
 | `skills-enhancer` | SKILL.md structure, trigger phrases | opus |
+| `cross-file-enhancer` | Cross-file semantic consistency (tools, agents, rules) | sonnet |
 
 ## Certainty Levels
 

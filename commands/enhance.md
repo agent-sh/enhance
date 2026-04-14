@@ -11,7 +11,7 @@ Run all enhancement analyzers in parallel and generate a unified report.
 
 ## Overview
 
-The master `/enhance` command orchestrates 7 specialized enhancers:
+The master `/enhance` command orchestrates 8 specialized enhancers:
 - **plugin** - Plugin structures, MCP tools, security patterns
 - **agent** - Agent prompts, frontmatter, tool restrictions
 - **claudemd** - CLAUDE.md/AGENTS.md project memory files
@@ -19,13 +19,14 @@ The master `/enhance` command orchestrates 7 specialized enhancers:
 - **prompt** - General prompt quality and clarity
 - **hooks** - Hook definitions and frontmatter quality
 - **skills** - SKILL.md structure and trigger clarity
+- **cross-file** - Cross-file semantic consistency (tools, agents, rules)
 
 ## Arguments
 
 Parse from $ARGUMENTS:
 - **target-path**: Directory or file to analyze (default: current directory)
 - **--apply**: Apply auto-fixes for HIGH certainty issues after report
-- **--focus=TYPE**: Run only specified enhancer(s): plugin, agent, claudemd/claude-memory, docs, prompt, hooks, skills
+- **--focus=TYPE**: Run only specified enhancer(s): plugin, agent, claudemd/claude-memory, docs, prompt, hooks, skills, cross-file
 - **--verbose**: Include LOW certainty issues in report
 - **--show-suppressed**: Show what's being filtered by auto-learned suppressions
 - **--no-learn**: Disable auto-learning for this run (analyze but don't save)
@@ -175,4 +176,11 @@ See skill for patterns, detection logic, and auto-fix implementations.
 # /enhance:skills
 
 Spawns `skills-enhancer` agent which invokes `enhance-skills` skill.
+See skill for patterns, detection logic, and auto-fix implementations.
+
+---
+
+# /enhance:cross-file
+
+Spawns `cross-file-enhancer` agent which invokes `enhance-cross-file` skill.
 See skill for patterns, detection logic, and auto-fix implementations.
