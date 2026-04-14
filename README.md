@@ -125,7 +125,7 @@ Analyze cross-file semantic consistency across agents, skills, and commands.
 /enhance:cross-file                 # Check cross-file consistency
 ```
 
-**Detects**: Tools vs frontmatter mismatches, broken agent references, duplicate rules, contradictions
+**Detects**: Tools vs frontmatter mismatches, broken agent references, orphaned agents, skill tool mismatches, duplicate rules, contradictions
 
 ## Agents
 
