@@ -114,7 +114,21 @@ const ENHANCER_AGENTS = {
 
 const promises = [];
 
-// Pre-fetch repo-intel data for enhancers
+// Pre-fetch repo-intel data for the enhancer agents.
+//
+// What each query gives the enhancers and how it shapes their suggestions:
+//
+//   doc-drift  - doc files with low code coupling. The docs-enhancer
+//                de-prioritises edits to docs that aren't "alive" (low
+//                coupling) and prioritises the ones that are - those
+//                are the ones users actually read against the code.
+//   stale-docs - symbol-level: the doc references a function/class
+//                that no longer exists in code. Highest-precision
+//                drift signal; trumps the heuristic doc-drift score.
+//   conventions - commit-message style + naming patterns. Passed to
+//                 agent-prompts, skills, and prompts enhancers so
+//                 their generated language matches the project voice
+//                 (e.g. terse vs. verbose, "feat:" vs "Add ", etc.).
 let docDriftContext = '';
 let conventionsContext = '';
 try {
@@ -144,7 +158,9 @@ try {
       conventionsContext = '\nProject conventions: ' + JSON.stringify(conventions);
     }
   }
-} catch (e) { /* unavailable */ }
+} catch (e) {
+  console.error(`[INFO] repo-intel context skipped: ${e.message}`);
+}
 
 for (const [type, agentType] of Object.entries(ENHANCER_AGENTS)) {
   if (focus && focus !== type) continue;
