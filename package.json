@@ -19,5 +19,8 @@
     "validation",
     "security",
     "best-practices"
-  ]
+  ],
+  "scripts": {
+    "test": "node --test tests/**/*.test.js"
+  }
 }

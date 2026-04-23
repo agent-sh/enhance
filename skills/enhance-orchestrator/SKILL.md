@@ -118,8 +118,8 @@ const promises = [];
 let docDriftContext = '';
 let conventionsContext = '';
 try {
-  const { binary } = require('@agentsys/lib');
-  const { getStateDirPath } = require('@agentsys/lib/platform/state-dir');
+  const { binary } = require(`${pluginRoot}/lib/agentsys`).get();
+  const { libRoot } = require(`${pluginRoot}/lib/agentsys`).get(); const { getStateDirPath } = require(`${libRoot}/platform/state-dir`);
   const fs = require('fs');
   const cwd = process.cwd();
   const mapFile = require('path').join(getStateDirPath(cwd), 'repo-intel.json');
