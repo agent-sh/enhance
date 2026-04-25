@@ -114,12 +114,26 @@ const ENHANCER_AGENTS = {
 
 const promises = [];
 
-// Pre-fetch repo-intel data for enhancers
+// Pre-fetch repo-intel data for the enhancer agents.
+//
+// What each query gives the enhancers and how it shapes their suggestions:
+//
+//   doc-drift  - doc files with low code coupling. The docs-enhancer
+//                de-prioritises edits to docs that aren't "alive" (low
+//                coupling) and prioritises the ones that are - those
+//                are the ones users actually read against the code.
+//   stale-docs - symbol-level: the doc references a function/class
+//                that no longer exists in code. Highest-precision
+//                drift signal; trumps the heuristic doc-drift score.
+//   conventions - commit-message style + naming patterns. Passed to
+//                 agent-prompts, skills, and prompts enhancers so
+//                 their generated language matches the project voice
+//                 (e.g. terse vs. verbose, "feat:" vs "Add ", etc.).
 let docDriftContext = '';
 let conventionsContext = '';
 try {
-  const { binary } = require('@agentsys/lib');
-  const { getStateDirPath } = require('@agentsys/lib/platform/state-dir');
+  const { binary } = require(`${pluginRoot}/lib/agentsys`).get();
+  const { libRoot } = require(`${pluginRoot}/lib/agentsys`).get(); const { getStateDirPath } = require(`${libRoot}/platform/state-dir`);
   const fs = require('fs');
   const cwd = process.cwd();
   const mapFile = require('path').join(getStateDirPath(cwd), 'repo-intel.json');
@@ -144,7 +158,9 @@ try {
       conventionsContext = '\nProject conventions: ' + JSON.stringify(conventions);
     }
   }
-} catch (e) { /* unavailable */ }
+} catch (e) {
+  console.error(`[INFO] repo-intel context skipped: ${e.message}`);
+}
 
 for (const [type, agentType] of Object.entries(ENHANCER_AGENTS)) {
   if (focus && focus !== type) continue;
@@ -290,3 +306,13 @@ if (flags.apply) {
 - MUST deduplicate findings across enhancers
 - NEVER auto-fix without explicit --apply flag
 - NEVER auto-fix MEDIUM or LOW certainty issues
+
+
+## Repo-Intel Data
+
+**Expected:** the orchestrator (the command that spawned this agent) has already checked `<stateDir>/repo-intel.json` and either pre-fetched the data into your context or skipped (user declined to generate). **Do not call `AskUserQuestion` here** - subagents cannot interact with the user.
+
+**If the pre-fetched data is empty**, proceed with the available context. The orchestrator has already made the decision on the user's behalf.
+
+**Binary:** `agent-analyzer` auto-downloads to `~/.agent-sh/bin/` from `agent-sh/agent-analyzer` GitHub releases (~10 MB) on first use. The `lib/agentsys` resolver locates the agentsys install (CC marketplace clone, npm global, or sibling repo).
+
