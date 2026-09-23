@@ -6,7 +6,7 @@
 
 ### Changed
 
-- Rewrote the command, agent and skill prompts for current models: goal, constraints with reasons, done criteria, and output contract instead of JavaScript pseudocode, "MUST" rule lists, and forced tool order. Prompt size went from 13,767 to 6,388 words.
+- Rewrote the command, agent and skill prompts for current models: goal, constraints with reasons, done criteria, and output contract instead of JavaScript pseudocode, "MUST" rule lists, and forced tool order. Prompt size went from 13,767 to 6,552 words.
 - The prompt guidance the enhancers apply is current: it flags all-caps emphasis, "think step by step", step choreography, repeated rules, history narratives and pinned model IDs, and it no longer recommends "should" to "MUST", adding emphasis markers, chain-of-thought instructions, XML tags as a requirement, or an example quota. Analyzer patterns that still encode that older advice (`missing_xml_structure`, `missing_cot`, `example_count_suboptimal`, `suboptimal_example_count`, `examples_without_contrast`, `missing_examples`, `critical_info_buried`, `missing_emphasis_markers`, `verbose_instructions`) are down-ranked to LOW at most.
 - Enhancer agents verify every analyzer finding against the file before reporting it, and return one JSON contract the orchestrator merges.
 - The orchestrator runs at most 4 enhancers at a time, and runs them inline one by one when the harness has no subagent tool.
