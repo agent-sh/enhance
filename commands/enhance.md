@@ -1,186 +1,53 @@
 ---
 name: enhance
 description: Analyze plugins, agents, prompts, docs, hooks, and skills for best-practice gaps
-codex-description: 'Use when user asks to "enhance prompts", "improve agents", "analyze plugins", "optimize documentation", "review CLAUDE.md". Runs 5 parallel analyzers on prompts, agents, plugins, docs, and project memory files.'
+codex-description: 'Use when user asks to "enhance prompts", "improve agents", "analyze plugins", "optimize documentation", "review CLAUDE.md". Runs parallel analyzers on prompts, agents, plugins, docs, hooks, skills, and project memory files.'
 argument-hint: "[target-path] [--apply] [--focus=TYPE] [--verbose] [--show-suppressed] [--no-learn] [--reset-learned] [--export-learned]"
 ---
 
-# /enhance - Master Enhancement Orchestrator
+# /enhance
 
-Run all enhancement analyzers in parallel and generate a unified report.
+Find the gaps in a repo's agent-facing files (plugins, agents, prompts, docs, project memory, hooks, skills, and the consistency between them) and report them in one ranked list. Change files only with `--apply`.
 
-## Overview
-
-The master `/enhance` command orchestrates 8 specialized enhancers:
-- **plugin** - Plugin structures, MCP tools, security patterns
-- **agent** - Agent prompts, frontmatter, tool restrictions
-- **claudemd** - CLAUDE.md/AGENTS.md project memory files
-- **docs** - Documentation structure and RAG optimization
-- **prompt** - General prompt quality and clarity
-- **hooks** - Hook definitions and frontmatter quality
-- **skills** - SKILL.md structure and trigger clarity
-- **cross-file** - Cross-file semantic consistency (tools, agents, rules)
+Run the `enhance-orchestrator` skill with `$ARGUMENTS`. If the Skill tool is unavailable, read `${CLAUDE_PLUGIN_ROOT}/skills/enhance-orchestrator/SKILL.md` and follow it.
 
 ## Arguments
 
-Parse from $ARGUMENTS:
-- **target-path**: Directory or file to analyze (default: current directory)
-- **--apply**: Apply auto-fixes for HIGH certainty issues after report
-- **--focus=TYPE**: Run only specified enhancer(s): plugin, agent, claudemd/claude-memory, docs, prompt, hooks, skills, cross-file
-- **--verbose**: Include LOW certainty issues in report
-- **--show-suppressed**: Show what's being filtered by auto-learned suppressions
-- **--no-learn**: Disable auto-learning for this run (analyze but don't save)
-- **--reset-learned**: Clear all auto-learned suppressions for this project
-- **--export-learned**: Export learned suppressions as JSON for team sharing
+- `target-path`: directory or file to analyze. Default: current directory.
+- `--apply`: after the report, apply the HIGH certainty findings that have an auto-fix.
+- `--focus=TYPE`: run one enhancer: `plugin`, `agent`, `claudemd` (alias `claude-memory`), `docs`, `prompt`, `hooks`, `skills`, `cross-file`.
+- `--verbose`: include LOW certainty findings.
+- `--show-suppressed`: list findings hidden by learned suppressions.
+- `--no-learn`: analyze without saving new suppressions.
+- `--reset-learned`: clear this project's learned suppressions.
+- `--export-learned`: print this project's learned suppressions as JSON, for sharing.
 
-## Workflow
+## Examples
 
-1. **Discovery** - Detect what content types exist in target path
-2. **Load Suppressions** - Load auto-learned and manual suppressions for project
-3. **Launch** - Start all relevant enhancers in parallel via Task()
-4. **Aggregate** - Collect and deduplicate findings from all enhancers
-5. **Report** - Generate unified report from aggregated findings
-6. **Auto-Learn** - Detect false positives and save for future runs (unless --no-learn)
-7. **Fix** - Apply auto-fixes if --apply flag is present
+```
+/enhance                         # everything that exists in the current directory
+/enhance --focus=agent           # agents only
+/enhance plugins/my-plugin --verbose
+/enhance --apply                 # report, then apply HIGH certainty auto-fixes
+```
 
-## Implementation
-
-Execute the `enhance-orchestrator` skill directly. The skill workflow:
-
-1. Parse arguments from $ARGUMENTS
-2. Run discovery to find content types
-3. Spawn enhancer agents in parallel via Task() for each content type
-4. Aggregate results from all enhancers
-5. Generate unified report
-
-See `skills/enhance-orchestrator/SKILL.md` for detailed implementation.
-
-## Output Format
+## Output
 
 ```markdown
 # Enhancement Analysis Report
 
-**Target**: {targetPath}
-**Date**: {timestamp}
+**Target**: <path>
 **Enhancers Run**: plugin, agent, docs
 
 ## Executive Summary
-
 | Enhancer | HIGH | MEDIUM | LOW | Auto-Fixable |
-|----------|------|--------|-----|--------------|
-| plugin | 2 | 3 | 1 | 1 |
-| agent | 1 | 2 | 0 | 1 |
-| docs | 0 | 4 | 2 | 0 |
-| **Total** | **3** | **9** | **3** | **2** |
+|---|---|---|---|---|
 
-## HIGH Certainty Issues (3)
+## HIGH Certainty Issues
+<grouped by enhancer, then file>
 
-[Grouped by enhancer, sorted by file]
-
-## MEDIUM Certainty Issues (9)
-
-[...]
+## MEDIUM Certainty Issues
 
 ## Auto-Fix Summary
-
-2 issues can be automatically fixed with `--apply` flag.
+<n> issues can be fixed with `--apply`.
 ```
-
-## Example Usage
-
-```bash
-# Full analysis of current directory
-/enhance
-
-# Focus on specific enhancer type
-/enhance --focus=agent
-
-# Apply auto-fixes for HIGH certainty issues
-/enhance --apply
-
-# Analyze specific path with verbose output
-/enhance plugins/next-task --verbose
-
-# Combined flags
-/enhance --focus=plugin --apply --verbose
-
-# Auto-Learning Suppression System
-# See what's being filtered by auto-learned suppressions
-/enhance --show-suppressed
-
-# Run without auto-learning (analyze only, don't save new suppressions)
-/enhance --no-learn
-
-# Reset all learned suppressions for this project
-/enhance --reset-learned
-
-# Export learned suppressions for team sharing
-/enhance --export-learned > suppressions-export.json
-```
-
-## Success Criteria
-
-- All relevant enhancers run in parallel
-- Findings deduplicated and sorted by certainty
-- Clear executive summary with counts
-- Auto-fixable issues highlighted
-- Fixes applied only with explicit --apply flag
-- Auto-learning detects false positives with 90%+ confidence
-- Learned suppressions stored in cross-platform location (${STATE_DIR}/enhance/suppressions.json)
-- Zero token waste on previously suppressed findings
-
----
-
-# /enhance:plugin
-
-Spawns `plugin-enhancer` agent which invokes `enhance-plugins` skill.
-See skill for patterns, detection logic, and auto-fix implementations.
-
----
-
-# /enhance:agent
-
-Spawns `agent-enhancer` agent which invokes `enhance-agent-prompts` skill.
-See skill for patterns, detection logic, and auto-fix implementations.
-
----
-
-# /enhance:docs
-
-Spawns `docs-enhancer` agent which invokes `enhance-docs` skill.
-See skill for patterns, detection logic, and auto-fix implementations.
-
----
-
-# /enhance:claudemd
-
-Spawns `claudemd-enhancer` agent which invokes `enhance-claude-memory` skill.
-See skill for patterns, detection logic, and auto-fix implementations.
-
----
-
-# /enhance:prompt
-
-Spawns `prompt-enhancer` agent which invokes `enhance-prompts` skill.
-See skill for patterns, detection logic, and auto-fix implementations.
-
----
-
-# /enhance:hooks
-
-Spawns `hooks-enhancer` agent which invokes `enhance-hooks` skill.
-See skill for patterns, detection logic, and auto-fix implementations.
-
----
-
-# /enhance:skills
-
-Spawns `skills-enhancer` agent which invokes `enhance-skills` skill.
-See skill for patterns, detection logic, and auto-fix implementations.
-
----
-
-# /enhance:cross-file
-
-Spawns `cross-file-enhancer` agent which invokes `enhance-cross-file` skill.
-See skill for patterns, detection logic, and auto-fix implementations.

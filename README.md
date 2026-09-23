@@ -4,141 +4,39 @@ Master enhancement orchestrator for plugins, agents, prompts, docs, hooks, and s
 
 ## Overview
 
-The enhance plugin provides specialized analyzers for different content types, identifying issues and suggesting improvements based on prompt engineering best practices.
+`/enhance` runs specialized analyzers over a repo's agent-facing files, verifies their findings, and reports them in one list ranked by certainty. The guidance targets current models: it flags dated prompt scaffolding (all-caps rule lists, "think step by step", step choreography, repeated rules) and never suggests adding emphasis.
 
-## Architecture
-
-```
-/enhance
-  -> /enhance:agent       - Agent-specific analysis (frontmatter, tool restrictions)
-  -> /enhance:prompt      - General prompt patterns (clarity, structure, examples)
-  -> /enhance:docs        - Documentation analysis (RAG optimization, readability)
-  -> /enhance:plugin      - Plugin structure (MCP tools, security patterns)
-  -> /enhance:claudemd    - Project memory optimization (CLAUDE.md/AGENTS.md)
-  -> /enhance:hooks       - Hook definitions (frontmatter, safety)
-  -> /enhance:skills      - SKILL.md structure and triggers
-  -> /enhance:cross-file  - Cross-file consistency (tools, agents, rules)
-```
-
-**Analysis depth**: Certainty-based findings (HIGH, MEDIUM, LOW)
-**Auto-fix**: Available for HIGH certainty issues with `--fix` flag
-**Model selection**: Opus for quality-critical analyzers, Sonnet for pattern-based checks
-
-## Commands
-
-### `/enhance`
-
-Run all applicable enhancers on current directory.
+## Usage
 
 ```
-/enhance                    # Auto-detect and run all relevant analyzers
-/enhance --fix              # Apply HIGH certainty auto-fixes
-/enhance --verbose          # Include LOW certainty issues
+/enhance                          # every enhancer whose content exists
+/enhance --focus=agent            # one enhancer
+/enhance plugins/my-plugin --verbose
+/enhance --apply                  # report, then apply HIGH certainty auto-fixes
+/enhance --show-suppressed        # findings hidden by learned suppressions
+/enhance --no-learn               # analyze without saving suppressions
+/enhance --reset-learned          # clear learned suppressions for this project
+/enhance --export-learned         # print learned suppressions as JSON
 ```
 
-### `/enhance:agent [target]`
+`--focus` values: `plugin`, `agent`, `claudemd` (alias `claude-memory`), `docs`, `prompt`, `hooks`, `skills`, `cross-file`.
 
-Analyze agent prompt files for configuration and structure issues.
+Enhancers run in parallel, at most 4 at a time. In a harness without a subagent tool they run one after another inline.
 
-```
-/enhance:agent                     # All agents in directory
-/enhance:agent my-agent.md         # Specific agent
-/enhance:agent --fix               # Apply auto-fixes
-```
+## Enhancers
 
-**Detects**: Missing frontmatter, unrestricted Bash, missing role section, tool configuration issues
-
-### `/enhance:prompt [target]`
-
-Analyze prompts for prompt engineering best practices.
-
-```
-/enhance:prompt                    # All prompts in directory
-/enhance:prompt system-prompt.md   # Specific prompt
-/enhance:prompt --fix              # Apply auto-fixes
-```
-
-**Detects**: Vague instructions, missing examples, aggressive emphasis, structural issues, invalid code blocks (JSON/JS syntax, language mismatches, heading hierarchy)
-
-### `/enhance:docs [target]`
-
-Analyze documentation for readability and RAG optimization.
-
-```
-/enhance:docs                      # All docs in directory
-/enhance:docs --ai                 # AI-only mode (aggressive optimization)
-/enhance:docs agent-docs/ --ai     # Specific directory
-```
-
-**Detects**: Verbose phrases, poor chunking, broken links, token inefficiency
-
-### `/enhance:plugin [target]`
-
-Analyze plugin structure and MCP tool definitions.
-
-```
-/enhance:plugin                    # All plugins
-/enhance:plugin my-plugin          # Specific plugin
-/enhance:plugin --fix              # Apply auto-fixes
-```
-
-**Detects**: Missing schema fields, security patterns, version mismatches
-
-### `/enhance:claudemd`
-
-Analyze project memory files (CLAUDE.md, AGENTS.md).
-
-```
-/enhance:claudemd                  # Find and analyze project memory
-/enhance:claudemd --fix            # Apply auto-fixes
-```
-
-**Detects**: Missing sections, broken references, README duplication, cross-platform issues
-
-### `/enhance:hooks`
-
-Analyze hook definitions for frontmatter quality.
-
-```
-/enhance:hooks                     # All hook definitions
-/enhance:hooks pre-commit.md        # Specific hook
-```
-
-**Detects**: Missing frontmatter, missing name/description
-
-### `/enhance:skills`
-
-Analyze SKILL.md files for required metadata and trigger clarity.
-
-```
-/enhance:skills                     # All SKILL.md files
-/enhance:skills enhance-docs         # Specific skill
-```
-
-**Detects**: Missing frontmatter, missing name/description, missing trigger phrase
-
-### `/enhance:cross-file`
-
-Analyze cross-file semantic consistency across agents, skills, and commands.
-
-```
-/enhance:cross-file                 # Check cross-file consistency
-```
-
-**Detects**: Tools vs frontmatter mismatches, broken agent references, orphaned agents, skill tool mismatches, duplicate rules, contradictions
-
-## Agents
-
-| Agent | Purpose | Model |
+| Enhancer | Checks | Model |
 |-------|---------|-------|
-| `agent-enhancer` | Frontmatter, tool restrictions, agent structure | opus |
-| `prompt-enhancer` | Clarity, examples, structure, anti-patterns | opus |
-| `docs-enhancer` | RAG optimization, readability, token efficiency | opus |
-| `plugin-enhancer` | MCP schemas, security patterns, structure | sonnet |
-| `claudemd-enhancer` | Project memory validation, cross-platform | opus |
-| `hooks-enhancer` | Hook frontmatter, structure, safety | opus |
-| `skills-enhancer` | SKILL.md structure, trigger phrases | opus |
-| `cross-file-enhancer` | Cross-file semantic consistency (tools, agents, rules) | sonnet |
+| `agent-enhancer` | Description as routing text, tool scope, model tier, prompt body | inherits session model |
+| `prompt-enhancer` | Missing context, dated patterns, output contracts | inherits session model |
+| `claudemd-enhancer` | CLAUDE.md / AGENTS.md accuracy, bloat, README duplication, cross-platform | inherits session model |
+| `skills-enhancer` | Trigger quality, invocation control, tool scope, size | inherits session model |
+| `docs-enhancer` | Broken links, structure, stale docs, retrieval readiness | sonnet |
+| `hooks-enhancer` | Hook safety, exit codes, timeouts, matcher scope | sonnet |
+| `plugin-enhancer` | Manifest, MCP tool schemas and descriptions, security | sonnet |
+| `cross-file-enhancer` | Undeclared tools, missing agent references, duplicate or contradictory rules | sonnet |
+
+Each enhancer runs its JavaScript analyzer from `lib/enhance/`, checks every finding against the file to drop false positives, and adds what a pattern analyzer cannot see.
 
 ## Certainty Levels
 
@@ -146,54 +44,14 @@ Analyze cross-file semantic consistency across agents, skills, and commands.
 |-------|---------|--------------|
 | HIGH | Definite issues | Some |
 | MEDIUM | Likely improvements | No |
-| LOW | Advisory suggestions | No |
+| LOW | Advisory suggestions (shown with `--verbose`) | No |
 
-LOW certainty issues only shown with `--verbose` flag.
-
-## Common Flags
-
-| Flag | Description |
-|------|-------------|
-| `--fix` | Apply HIGH certainty auto-fixes |
-| `--verbose` | Include LOW certainty issues |
-| `--dry-run` | Show what would be fixed without applying |
-| `--ai` | AI-only mode (docs analyzer) |
-| `--both` | Both audiences mode (docs analyzer, default) |
-
-## Output Format
-
-Each analyzer generates a markdown report:
-
-```markdown
-## Analysis: {name}
-
-**File**: {path}
-**Analyzed**: {timestamp}
-
-### Summary
-- HIGH: {count} issues
-- MEDIUM: {count} issues
-- LOW: {count} issues (verbose only)
-
-### {Category} Issues ({n})
-
-| Issue | Fix | Certainty |
-|-------|-----|-----------|
-| Description | Suggested fix | HIGH |
-```
-
-## Integration
-
-Can be invoked by:
-- Direct command: `/enhance:*`
-- Phase 9 review loop during workflow
-- `delivery-validator` before shipping
-- Individual analysis workflows
+Fixes apply only with `--apply`, only for HIGH certainty findings that have an auto-fix. Security and cross-file findings are never auto-fixed.
 
 ## Requirements
 
-- Claude Code
-- Node.js (for lib functions)
+- An agentsys-supported harness (Claude Code, OpenCode, Codex, Cursor, Kiro)
+- Node.js (for the analyzers)
 
 ## License
 
