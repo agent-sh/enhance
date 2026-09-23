@@ -24,10 +24,10 @@ Analyze documentation files under the target path (default: `docs/`) and return 
 
 ## Output
 
-Return only this JSON, so the orchestrator can merge it:
+Return only this JSON, so the orchestrator can merge it. `enhancerType` is always `"docs"`: the report groups findings by that exact string.
 
 ```json
-{ "enhancerType": "<type>", "findings": [ { "file": "path", "line": 12, "issue": "...", "fix": "...", "certainty": "HIGH|MEDIUM|LOW", "patternId": "...", "autoFixable": false } ], "summary": { "high": 0, "medium": 0, "low": 0 } }
+{ "enhancerType": "docs", "findings": [ { "file": "path", "line": 12, "issue": "...", "fix": "...", "certainty": "HIGH|MEDIUM|LOW", "patternId": "...", "autoFixable": false } ], "summary": { "high": 0, "medium": 0, "low": 0 } }
 ```
 
 Include LOW findings only when `verbose` is set. When applying fixes, return `{ "applied": [...], "failed": [{ "file": "...", "patternId": "...", "error": "..." }] }` instead.

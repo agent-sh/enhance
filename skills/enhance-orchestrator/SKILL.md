@@ -41,7 +41,7 @@ If `<stateDir>/repo-intel.json` exists, gather two optional signals through `run
 
 ## Running the enhancers
 
-Spawn each applicable enhancer agent with the target path, `verbose`, and its context. Run them in parallel, at most 4 at a time. Without a `Task` tool, run each enhancer's skill yourself, one after another. Each returns:
+Spawn each applicable enhancer agent with its enhancer type (the first column of the Discovery table), the target path, `verbose`, and its context. Run them in parallel, at most 4 at a time. Without a `Task` tool, run each enhancer's skill yourself, one after another. Each returns:
 
 ```json
 { "enhancerType": "agent", "findings": [ { "file": "...", "line": 12, "issue": "...", "fix": "...", "certainty": "HIGH|MEDIUM|LOW", "patternId": "...", "autoFixable": false } ], "summary": { "high": 0, "medium": 0, "low": 0 } }
@@ -60,7 +60,7 @@ Learned suppressions hide findings the project has repeatedly shown to be false 
 
 ## Report
 
-Merge the findings, deduplicate by file, line and issue, and render with `generateOrchestratorReport(aggregated, { verbose, showAutoFixable, targetPath })` from `lib/enhance/reporter.js`, where `aggregated` is `{ findings, byEnhancer, totals }`. HIGH findings come first. LOW findings appear only with `--verbose`. If the reporter is unavailable, produce the same shape by hand (see the `/enhance` output format).
+Merge the findings. Set `source` on each finding to its enhancer's `enhancerType`, and key `byEnhancer` by the same value with that enhancer's `summary`: the reporter builds the Executive Summary rows, deduplication and grouping from `source`. Deduplicate by file, line and issue, and render with `generateOrchestratorReport(aggregated, { verbose, showAutoFixable, targetPath })` from `lib/enhance/reporter.js`, where `aggregated` is `{ findings, byEnhancer, totals }`. HIGH findings come first. LOW findings appear only with `--verbose`. The reporter's summary table has rows for `plugin`, `agent`, `claudemd`, `docs`, `prompt`, `hooks` and `skills` only, so add a `cross-file` row yourself when that enhancer ran. If the reporter is unavailable, produce the same shape by hand (see the `/enhance` output format).
 
 ## Apply
 

@@ -22,10 +22,10 @@ Analyze skill files under the target path (default: `skills/`) and return verifi
 
 ## Output
 
-Return only this JSON, so the orchestrator can merge it:
+Return only this JSON, so the orchestrator can merge it. `enhancerType` is always `"skills"`: the report groups findings by that exact string.
 
 ```json
-{ "enhancerType": "<type>", "findings": [ { "file": "path", "line": 12, "issue": "...", "fix": "...", "certainty": "HIGH|MEDIUM|LOW", "patternId": "...", "autoFixable": false } ], "summary": { "high": 0, "medium": 0, "low": 0 } }
+{ "enhancerType": "skills", "findings": [ { "file": "path", "line": 12, "issue": "...", "fix": "...", "certainty": "HIGH|MEDIUM|LOW", "patternId": "...", "autoFixable": false } ], "summary": { "high": 0, "medium": 0, "low": 0 } }
 ```
 
 Include LOW findings only when `verbose` is set. When applying fixes, return `{ "applied": [...], "failed": [{ "file": "...", "patternId": "...", "error": "..." }] }` instead.
