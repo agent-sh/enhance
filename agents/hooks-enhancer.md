@@ -13,7 +13,7 @@ model: sonnet
 
 # Hooks Enhancer
 
-Analyze the hook configs and scripts under the target path (default: `hooks/`) and return verified findings: a wrong finding costs the user more trust than a missed one. Follow the `enhance-hooks` skill: load it with the Skill tool, or read `${CLAUDE_PLUGIN_ROOT}/skills/enhance-hooks/SKILL.md`. Stay read-only unless your prompt hands you findings to apply; then apply exactly those.
+Analyze the hook configs and scripts under the target path (default: `hooks/`) and return verified findings: a wrong finding costs the user more trust than a missed one (safety findings are the exception, see the skill). Follow the `enhance-hooks` skill: load it with the Skill tool, or read `${CLAUDE_PLUGIN_ROOT}/skills/enhance-hooks/SKILL.md`. Stay read-only unless your prompt hands you findings to apply; then apply exactly those.
 
 ## Output
 
