@@ -8,6 +8,10 @@
 - The agent-prompts skill down-ranks the analyzer's `missing_role`, and `missing_constraints` when an agent states its limits inline or in the skill it loads, so agents written in this style are not flagged HIGH.
 - AGENTS.md drops the generic model table and the GPU validation text this CPU-only repo does not need, replaces the nonexistent `npm run validate` with the agnix command CI runs, and gains an Overview that says which of `lib/` is synced from agent-core.
 
+### Fixed
+
+- `enhance-docs` on a single file returned no findings. The skill called `analyzeAllDocs()`, which walks a directory and returns `[]` for a file path. It now calls `analyze({ doc, mode })`, which handles both a file and a directory. `tests/enhance-docs-skill.test.js` runs the skill's command on both.
+
 ## [1.1.0] - 2026-09-24
 
 ### Changed
