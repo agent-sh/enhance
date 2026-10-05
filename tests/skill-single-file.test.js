@@ -132,6 +132,9 @@ before(() => {
       fs.writeFileSync(file, content);
     }
   }
+  // A skill reference file with no frontmatter. It is not a skill.
+  fs.mkdirSync(path.join(workDir, 'skills/deploy/references'), { recursive: true });
+  fs.writeFileSync(path.join(workDir, 'skills/deploy/references/guide.md'), '# Deploy guide\n\nRun the build first.\n');
 });
 
 after(() => {
@@ -160,3 +163,10 @@ for (const c of CASES) {
     );
   });
 }
+
+test('enhance-skills gives [] for a file that is not SKILL.md, as a directory run skips it', () => {
+  const c = CASES.find(x => x.skill === 'enhance-skills');
+  assert.deepEqual(runSkill(c, 'skills/deploy/references/guide.md'), []);
+  const inDir = runSkill(c, c.dir).map(r => path.relative(workDir, path.resolve(workDir, r.skillPath))).sort();
+  assert.deepEqual(inDir, [path.join('skills', 'deploy', 'SKILL.md'), path.join('skills', 'reader', 'SKILL.md')]);
+});

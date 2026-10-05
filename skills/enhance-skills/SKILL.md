@@ -16,7 +16,7 @@ node -e 'const a=require(process.argv[1]); console.log(JSON.stringify(a.analyzeA
   "${CLAUDE_PLUGIN_ROOT}/lib/enhance/skill-analyzer.js" "<path>" "<true|false>"
 ```
 
-Pass `true` as the last argument when `--verbose` is set (or your caller sets `verbose`): without it the analyzer skips its LOW certainty checks. `<path>` can be one `SKILL.md` or a directory; the result is an array with one entry per `SKILL.md`.
+Pass `true` as the last argument when `--verbose` is set (or your caller sets `verbose`): without it the analyzer skips its LOW certainty checks. `<path>` can be one `SKILL.md` or a directory; the result is an array with one entry per `SKILL.md`, so any other file gives `[]`.
 
 Verify each finding against the file: the analyzer has false positives.
 
