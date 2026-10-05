@@ -12,6 +12,7 @@
 
 - `enhance-docs` on a single file returned no findings. The skill called `analyzeAllDocs()`, which walks a directory and returns `[]` for a file path. It now calls `analyze({ doc, mode })`, which handles both a file and a directory. `tests/enhance-docs-skill.test.js` runs the skill's command on both.
 - `enhance-docs --verbose` now runs the analyzer's LOW certainty checks. The skill accepted `--verbose` but its analyzer command passed only the mode, so `verbose` was always false. The command takes a `<true|false>` argument and passes it through. `tests/enhance-docs-verbose.test.js` runs the skill's command both ways.
+- `--verbose` now reaches the analyzer in `enhance-agent-prompts`, `enhance-prompts`, `enhance-plugins` and `enhance-claude-memory`. Each skill accepted the flag but its analyzer command passed only the path, so their LOW certainty checks never ran. Each command takes a `<true|false>` argument and passes it as `verbose`, as `enhance-docs` does. `tests/skill-verbose.test.js` runs each command both ways, and fails for any skill that documents `--verbose` but does not pass it to an analyzer that reads it.
 - `npm test` works on Node 18 and 20. The script used `tests/**/*.test.js`. `sh` reads `**` as `*`, matches nothing under `tests/*/`, and passes the pattern on unexpanded; Node expands test globs itself only from 21 on, so Node 18 and 20 failed with "Could not find". The script is now `node --test tests/*.test.js`, which the shell expands, and CI runs it on Node 18, 22, 24 and 26.
 
 ## [1.1.0] - 2026-09-24
