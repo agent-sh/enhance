@@ -2,7 +2,7 @@
 name: enhance-plugins
 description: "Use when reviewing agent plugins: manifest structure, MCP tool schemas and descriptions, and plugin security patterns."
 version: 5.2.0
-argument-hint: "[path] [--fix]"
+argument-hint: "[path] [--fix] [--verbose]"
 ---
 
 # enhance-plugins
@@ -14,11 +14,11 @@ Plugins are directories with `.claude-plugin/plugin.json` (Claude Code), OpenCod
 ## Run the analyzer
 
 ```bash
-node -e 'const a=require(process.argv[1]); a.analyzePlugin(process.argv[2]).then(r => console.log(JSON.stringify(r, null, 2)))' \
-  "${CLAUDE_PLUGIN_ROOT}/lib/enhance/plugin-analyzer.js" "<plugin dir>"
+node -e 'const a=require(process.argv[1]); a.analyzePlugin(process.argv[2], { verbose: process.argv[3] === "true" }).then(r => console.log(JSON.stringify(r, null, 2)))' \
+  "${CLAUDE_PLUGIN_ROOT}/lib/enhance/plugin-analyzer.js" "<plugin dir>" "<true|false>"
 ```
 
-For a directory of plugins, `analyzeAllPlugins(<dir>)`. Verify each finding: the analyzer has false positives.
+Pass `true` as the last argument when `--verbose` is set (or your caller sets `verbose`): without it the analyzer skips its LOW certainty checks. For a directory of plugins, call `analyzeAllPlugins` with the same arguments. Verify each finding: the analyzer has false positives.
 
 ## What to check
 

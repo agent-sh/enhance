@@ -14,9 +14,11 @@ Agent files live in `.claude/agents/` and `~/.claude/agents/` (Claude Code), `.o
 ## Run the analyzer
 
 ```bash
-node -e 'const a=require(process.argv[1]); console.log(JSON.stringify(a.analyzeAllAgents(process.argv[2]), null, 2))' \
-  "${CLAUDE_PLUGIN_ROOT}/lib/enhance/agent-analyzer.js" "<path>"
+node -e 'const a=require(process.argv[1]); console.log(JSON.stringify(a.analyzeAllAgents(process.argv[2], { verbose: process.argv[3] === "true" }), null, 2))' \
+  "${CLAUDE_PLUGIN_ROOT}/lib/enhance/agent-analyzer.js" "<path>" "<true|false>"
 ```
+
+Pass `true` as the last argument when `--verbose` is set (or your caller sets `verbose`): without it the analyzer skips its LOW certainty checks. `<path>` can be one agent file or a directory of them; the result is an array with one entry per agent file.
 
 Verify each finding against the file: the analyzer has false positives. For example, its frontmatter parser does not read YAML list syntax (`tools:` followed by `- Read` lines), so it reports "no tools restriction" for agents that do restrict tools. Drop those.
 

@@ -2,7 +2,9 @@
  * Runs the analyzer command exactly as skills/enhance-docs/SKILL.md documents
  * it, against a single file and against a directory. The skill used to call
  * analyzeAllDocs(), which walks a directory and returns [] for a file path,
- * so `enhance-docs <file>` reported nothing.
+ * so `enhance-docs <file>` reported nothing. After that fix, a single file
+ * reported every relative link in it as broken: the analyzer checked links
+ * against an empty list of files. It now checks them on disk.
  *
  * Run: `node --test tests/enhance-docs-skill.test.js`
  */
@@ -20,8 +22,9 @@ const repoRoot = path.resolve(__dirname, '..');
 const skillPath = path.join(repoRoot, 'skills', 'enhance-docs', 'SKILL.md');
 
 // A heading jump (H1 to H3) and a code block without a language: both are
-// HIGH certainty findings in every mode.
-const FIXTURE = '# Guide\n\n### Setup\n\n```\nnpm install\n```\n';
+// HIGH certainty findings in every mode. One link points at a sibling that
+// exists and one at a file that does not.
+const FIXTURE = '# Guide\n\nSee [Intro](intro.md) and [Gone](gone.md).\n\n### Setup\n\n```\nnpm install\n```\n';
 
 let workDir;
 
@@ -64,6 +67,7 @@ before(() => {
   workDir = fs.mkdtempSync(path.join(os.tmpdir(), 'enhance-docs-skill-'));
   fs.mkdirSync(path.join(workDir, 'docs'));
   fs.writeFileSync(path.join(workDir, 'docs', 'guide.md'), FIXTURE);
+  fs.writeFileSync(path.join(workDir, 'docs', 'intro.md'), '# Intro\n');
 });
 
 after(() => {
@@ -87,4 +91,12 @@ test('a single file gets the same findings as the same file inside a directory',
     patternIds(runSkill('docs/guide.md'), 'docs/guide.md'),
     patternIds(runSkill('docs'), 'docs/guide.md')
   );
+});
+
+test('a single file reports only the link whose target is missing, as a directory run does', () => {
+  for (const target of ['docs/guide.md', 'docs']) {
+    const result = runSkill(target).find(r => path.resolve(workDir, r.docPath) === path.resolve(workDir, 'docs/guide.md'));
+    const broken = result.linkIssues.find(i => i.patternId === 'broken_internal_link');
+    assert.deepEqual(broken && broken.details, ['gone.md'], `broken links for ${target}`);
+  }
 });

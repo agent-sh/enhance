@@ -2,6 +2,7 @@
 name: enhance-claude-memory
 description: "Use when reviewing CLAUDE.md or AGENTS.md project memory files for broken references, bloat, duplication with the README, and instructions that no longer help."
 version: 5.2.0
+argument-hint: "[path] [--fix] [--verbose]"
 ---
 
 # enhance-claude-memory
@@ -13,9 +14,11 @@ Files, in lookup order: `CLAUDE.md`, `AGENTS.md`, `.github/CLAUDE.md`, `.github/
 ## Run the analyzer
 
 ```bash
-node -e 'const a=require(process.argv[1]); console.log(JSON.stringify(a.analyze(process.argv[2]), null, 2))' \
-  "${CLAUDE_PLUGIN_ROOT}/lib/enhance/projectmemory-analyzer.js" "<path>"
+node -e 'const a=require(process.argv[1]); console.log(JSON.stringify(a.analyze(process.argv[2], { verbose: process.argv[3] === "true" }), null, 2))' \
+  "${CLAUDE_PLUGIN_ROOT}/lib/enhance/projectmemory-analyzer.js" "<path>" "<true|false>"
 ```
+
+Pass `true` as the last argument when `--verbose` is set (or your caller sets `verbose`): without it the analyzer skips its LOW certainty checks.
 
 It validates file and command references, measures tokens, and estimates README overlap. Verify each finding before reporting it: the analyzer has false positives.
 
