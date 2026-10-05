@@ -11,9 +11,8 @@ Run the enhancers that apply to the target, merge their findings, and report the
 
 ## Constraints
 
-- Analysis is read-only. Files change only with `--apply`, and then only for HIGH certainty findings that have an auto-fix. The user asked for a report; edits to their prompts without consent are unwelcome even when right.
-- Run only enhancers whose content exists. An empty enhancer run is noise.
-- Each finding appears once, even if two enhancers raised it.
+- Analysis is read-only. Files change only with `--apply`, and then only for HIGH certainty findings that have an auto-fix: the user asked for a report, and unrequested edits to their prompts are unwelcome even when right.
+- Run only the enhancers whose content exists. An empty enhancer run is noise.
 
 ## Discovery
 
@@ -60,7 +59,7 @@ Learned suppressions hide findings the project has repeatedly shown to be false 
 
 ## Report
 
-Merge the findings. Set `source` on each finding to its enhancer's `enhancerType`, and key `byEnhancer` by the same value with that enhancer's `summary`: the reporter builds the Executive Summary rows, deduplication and grouping from `source`. Deduplicate by file, line and issue, and render with `generateOrchestratorReport(aggregated, { verbose, showAutoFixable, targetPath })` from `lib/enhance/reporter.js`, where `aggregated` is `{ findings, byEnhancer, totals }`. HIGH findings come first. LOW findings appear only with `--verbose`. The reporter's summary table has rows for `plugin`, `agent`, `claudemd`, `docs`, `prompt`, `hooks` and `skills` only, so add a `cross-file` row yourself when that enhancer ran. If the reporter is unavailable, produce the same shape by hand (see the `/enhance` output format).
+Merge the findings. Set `source` on each finding to its enhancer's `enhancerType`, and key `byEnhancer` by the same value with that enhancer's `summary`: the reporter builds the Executive Summary rows, deduplication and grouping from `source`. Deduplicate by file, line and issue (two enhancers can raise the same finding), and render with `generateOrchestratorReport(aggregated, { verbose, showAutoFixable, targetPath })` from `lib/enhance/reporter.js`, where `aggregated` is `{ findings, byEnhancer, totals }`. HIGH findings come first. LOW findings appear only with `--verbose`. The reporter's summary table has rows for `plugin`, `agent`, `claudemd`, `docs`, `prompt`, `hooks` and `skills` only, so add a `cross-file` row yourself when that enhancer ran. If the reporter is unavailable, produce the same shape by hand (see the `/enhance` output format).
 
 ## Apply
 

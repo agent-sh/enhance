@@ -22,11 +22,11 @@ The analyzer only checks frontmatter on hook markdown files. The script and conf
 
 ## Check facts against the current reference
 
-Hook events, hook types (command, http, prompt, agent, MCP tool), which events support which types, matcher rules, and output fields change between harness releases. Before flagging a config as invalid, check the harness's current hooks reference (for Claude Code: https://code.claude.com/docs/en/hooks). If you cannot check, report the doubt as MEDIUM, not HIGH. For example, prompt hooks are no longer limited to `Stop` and `SubagentStop`.
+Hook events, hook types (command, http, prompt, agent, MCP tool), which events support which types, matcher rules, and output fields change between harness releases. Before flagging a config as invalid, check the harness's current hooks reference (for Claude Code: https://code.claude.com/docs/en/hooks). If you cannot check, report the doubt as MEDIUM, not HIGH.
 
 ## What to check
 
-**Safety (HIGH).** Scripts that parse tool input and then run it: `eval` of input, unquoted variables, `curl | sh`. Destructive commands inside a hook (`rm -rf`, `git reset --hard`, `git push --force`) without a guard. Secrets in the script or config. A guard hook that fails open: if parsing fails, a security hook should block, not allow.
+**Safety (HIGH).** Scripts that parse tool input and then run it: `eval` of input, unquoted variables, `curl | sh`. Destructive commands inside a hook (`rm -rf`, `git reset --hard`, `git push --force`) without a guard. Secrets in the script or config. A guard hook that fails open: if parsing fails, a security hook should block, not allow. Here a missed dangerous command costs more than a false alarm, so report borderline cases as MEDIUM instead of dropping them.
 
 **Exit codes and output (HIGH).** For command hooks, exit 0 is success, exit 2 blocks and feeds stderr back, other codes are non-blocking errors. A script meant to block that exits 1 does not block. JSON output must be valid and use field names the event supports.
 
@@ -40,7 +40,7 @@ Hook events, hook types (command, http, prompt, agent, MCP tool), which events s
 
 ## Fix
 
-With `--fix`, apply HIGH certainty auto-fixes only: add `set -euo pipefail` to a bash hook that lacks it, change a blocking `exit 1` to `exit 2` when the script's intent to block is clear, add missing frontmatter fields to hook markdown. Never change what a hook allows or blocks.
+With `--fix`, apply HIGH certainty auto-fixes only: add `set -euo pipefail` to a bash hook that lacks it, change a blocking `exit 1` to `exit 2` when the script's intent to block is clear, add missing frontmatter fields to hook markdown. Do not change what a hook allows or blocks.
 
 ## Output
 

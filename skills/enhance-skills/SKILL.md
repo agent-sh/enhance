@@ -16,7 +16,7 @@ node -e 'const a=require(process.argv[1]); console.log(JSON.stringify(a.analyzeA
   "${CLAUDE_PLUGIN_ROOT}/lib/enhance/skill-analyzer.js" "<path>"
 ```
 
-Verify each finding against the file.
+Verify each finding against the file: the analyzer has false positives.
 
 ## What to check
 
@@ -36,7 +36,7 @@ Verify each finding against the file.
 
 ## Fix
 
-With `--fix`, apply HIGH certainty auto-fixes only: missing frontmatter, a trigger clause for a description that has none (propose wording from the body), bare Bash scoped to what the body uses. Never remove content.
+With `--fix`, apply HIGH certainty auto-fixes only: missing frontmatter, a trigger clause for a description that has none (propose wording from the body), bare Bash scoped to what the body uses. Do not remove content.
 
 ## Output
 

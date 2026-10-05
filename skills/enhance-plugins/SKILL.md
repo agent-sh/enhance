@@ -18,7 +18,7 @@ node -e 'const a=require(process.argv[1]); a.analyzePlugin(process.argv[2]).then
   "${CLAUDE_PLUGIN_ROOT}/lib/enhance/plugin-analyzer.js" "<plugin dir>"
 ```
 
-For a directory of plugins, `analyzeAllPlugins(<dir>)`. Verify each finding.
+For a directory of plugins, `analyzeAllPlugins(<dir>)`. Verify each finding: the analyzer has false positives.
 
 ## What to check
 
@@ -36,7 +36,7 @@ For a directory of plugins, `analyzeAllPlugins(<dir>)`. Verify each finding.
 
 ## Fix
 
-With `--fix`, apply HIGH certainty auto-fixes only (`applyFixes` in the analyzer): `additionalProperties: false`, a `required` array, a version synced between `plugin.json` and `package.json`. Never change tool behavior, and never auto-fix security findings: they need the author's judgment.
+With `--fix`, apply HIGH certainty auto-fixes only (`applyFixes` in the analyzer): `additionalProperties: false`, a `required` array, a version synced between `plugin.json` and `package.json`. Do not change tool behavior or auto-fix security findings: both need the author's judgment.
 
 ## Output
 

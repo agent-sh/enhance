@@ -16,11 +16,11 @@ node -e 'const a=require(process.argv[1]); console.log(JSON.stringify(a.analyzeA
   "${CLAUDE_PLUGIN_ROOT}/lib/enhance/prompt-analyzer.js" "<path>"
 ```
 
-For one file use `analyzePrompt(<file>)`. The result has `summary` and `findings` (`issue`, `fix`, `certainty`, `patternId`, `line`). Verify each finding against the text, then add what the analyzer cannot see (below).
+For one file use `analyzePrompt(<file>)`. The result has `summary` and `findings` (`issue`, `fix`, `certainty`, `patternId`, `line`). Verify each finding against the text (the analyzer has false positives), then add what the analyzer cannot see (below).
 
 ## What current models need
 
-Current models (recent Claude, GPT and strong open models) follow instructions closely and literally. Text written for older models now hurts: emphasis makes them over-apply a rule, step scripts make them rigid, and repeated rules make them reconcile wordings instead of working. Judge a prompt by whether each line carries something only the author knows.
+Current models (recent Claude, GPT and strong open models) follow instructions closely and literally, so text written for older models now hurts (see the table). Judge a prompt by whether each line carries something only the author knows.
 
 Keep and strengthen:
 
@@ -55,7 +55,7 @@ These analyzer patterns encode older advice. Report them as LOW at most, and onl
 - `suboptimal_example_count`, `examples_without_contrast`, `missing_examples`: examples are right for format-sensitive output, not a quota.
 - `critical_info_buried`: matters for very long prompts only.
 
-Never suggest adding emphasis or chain-of-thought instructions.
+Do not suggest adding emphasis or chain-of-thought instructions.
 
 ## Fix
 

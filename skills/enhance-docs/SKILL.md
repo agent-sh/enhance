@@ -19,7 +19,7 @@ node -e 'const a=require(process.argv[1]); console.log(JSON.stringify(a.analyzeA
   "${CLAUDE_PLUGIN_ROOT}/lib/enhance/docs-analyzer.js" "<path>" "<ai|both>"
 ```
 
-Verify each finding. If the prompt includes doc-drift or stale-doc context from repo-intel, prioritize those docs: a doc that names a symbol that no longer exists is the most valuable finding you can report.
+Verify each finding: the analyzer has false positives. If the prompt includes doc-drift or stale-doc context from repo-intel, prioritize those docs: a doc that names a symbol that no longer exists is the most valuable finding you can report.
 
 ## What to check
 
@@ -35,7 +35,7 @@ Verify each finding. If the prompt includes doc-drift or stale-doc context from 
 
 ## Fix
 
-With `--fix`, apply HIGH certainty auto-fixes only: heading level jumps, missing code-block languages when the content makes the language obvious, and (in `--ai` mode) the verbose-phrase replacements. Preserve tone. Never delete content.
+With `--fix`, apply HIGH certainty auto-fixes only: heading level jumps, missing code-block languages when the content makes the language obvious, and (in `--ai` mode) the verbose-phrase replacements. Preserve tone and content.
 
 ## Output
 
