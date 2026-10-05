@@ -12,11 +12,11 @@ Find what in a prompt makes a current model do worse: missing context, dated sca
 ## Run the analyzer
 
 ```bash
-node -e 'const a=require(process.argv[1]); console.log(JSON.stringify(a.analyzeAllPrompts(process.argv[2], { verbose: process.argv[3] === "true" }), null, 2))' \
+node -e 'const a=require(process.argv[1]); console.log(JSON.stringify(a.analyze({ prompt: process.argv[2], verbose: process.argv[3] === "true" }), null, 2))' \
   "${CLAUDE_PLUGIN_ROOT}/lib/enhance/prompt-analyzer.js" "<path>" "<true|false>"
 ```
 
-Pass `true` as the last argument when `--verbose` is set (or your caller sets `verbose`): without it the analyzer skips its LOW certainty checks. For one file, call `analyzePrompt` with the same arguments. The result has `summary` and `findings` (`issue`, `fix`, `certainty`, `patternId`, `line`). Verify each finding against the text (the analyzer has false positives), then add what the analyzer cannot see (below).
+Pass `true` as the last argument when `--verbose` is set (or your caller sets `verbose`): without it the analyzer skips its LOW certainty checks. `<path>` can be a file or a directory: a file gives one result, a directory an array with one result per prompt file. Each result groups its findings (`issue`, `fix`, `certainty`, `patternId`) in arrays named `*Issues`. Verify each finding against the text (the analyzer has false positives), then add what the analyzer cannot see (below).
 
 ## What current models need
 
