@@ -11,6 +11,8 @@
 ### Fixed
 
 - `enhance-docs` on a single file returned no findings. The skill called `analyzeAllDocs()`, which walks a directory and returns `[]` for a file path. It now calls `analyze({ doc, mode })`, which handles both a file and a directory. `tests/enhance-docs-skill.test.js` runs the skill's command on both.
+- `enhance-docs --verbose` now runs the analyzer's LOW certainty checks. The skill accepted `--verbose` but its analyzer command passed only the mode, so `verbose` was always false. The command takes a `<true|false>` argument and passes it through. `tests/enhance-docs-verbose.test.js` runs the skill's command both ways.
+- `npm test` works on Node 18. The script used `tests/**/*.test.js`. `sh` reads `**` as `*`, matches nothing under `tests/*/`, and passes the pattern on unexpanded; Node expands test globs itself only from 21 on, so Node 18 and 20 failed with "Could not find". The script is now `node --test tests/*.test.js`, which the shell expands.
 
 ## [1.1.0] - 2026-09-24
 
