@@ -2,7 +2,7 @@
 name: enhance-skills
 description: "Use when reviewing SKILL.md files for trigger quality, invocation control, tool scope, size, and prompt quality."
 version: 5.2.0
-argument-hint: "[path] [--fix]"
+argument-hint: "[path] [--fix] [--verbose]"
 ---
 
 # enhance-skills
@@ -12,9 +12,11 @@ A skill's description decides when it loads, and its body is paid for on every l
 ## Run the analyzer
 
 ```bash
-node -e 'const a=require(process.argv[1]); console.log(JSON.stringify(a.analyzeAllSkills(process.argv[2]), null, 2))' \
-  "${CLAUDE_PLUGIN_ROOT}/lib/enhance/skill-analyzer.js" "<path>"
+node -e 'const a=require(process.argv[1]); console.log(JSON.stringify(a.analyzeAllSkills(process.argv[2], { verbose: process.argv[3] === "true" }), null, 2))' \
+  "${CLAUDE_PLUGIN_ROOT}/lib/enhance/skill-analyzer.js" "<path>" "<true|false>"
 ```
+
+Pass `true` as the last argument when `--verbose` is set (or your caller sets `verbose`): without it the analyzer skips its LOW certainty checks. `<path>` can be one `SKILL.md` or a directory; the result is an array with one entry per `SKILL.md`.
 
 Verify each finding against the file: the analyzer has false positives.
 

@@ -1,8 +1,9 @@
 /**
- * Runs the analyzer command of enhance-agent-prompts and enhance-prompts
- * exactly as each SKILL.md documents it, on a single file and on a directory.
- * Both commands called a directory walker: analyzeAllAgents() threw ENOTDIR
- * on a file path, and analyzeAllPrompts() returned []. enhance-docs had the
+ * Runs the analyzer command of enhance-agent-prompts, enhance-prompts,
+ * enhance-skills and enhance-hooks exactly as each SKILL.md documents it, on
+ * a single file and on a directory. Each command called a directory walker:
+ * analyzeAllAgents() threw ENOTDIR on a file path, and analyzeAllPrompts(),
+ * analyzeAllSkills() and analyzeAllHooks() returned []. enhance-docs had the
  * same bug (tests/enhance-docs-skill.test.js).
  *
  * Run: `node --test tests/skill-single-file.test.js`
@@ -46,6 +47,30 @@ const CASES = [
     },
     pathKey: 'promptPath',
     pattern: 'heading_hierarchy_gaps'
+  },
+  {
+    skill: 'enhance-skills',
+    dir: 'skills',
+    file: 'skills/deploy/SKILL.md',
+    files: {
+      // No name in the frontmatter: missing_name.
+      'skills/deploy/SKILL.md': '---\ndescription: Builds the docs site.\n---\n\nBuild the site.\n',
+      'skills/reader/SKILL.md': '---\nname: reader\ndescription: Use when user asks to read files.\n---\n\nRead files.\n'
+    },
+    pathKey: 'skillPath',
+    pattern: 'missing_name'
+  },
+  {
+    skill: 'enhance-hooks',
+    dir: 'hooks',
+    file: 'hooks/guard.md',
+    files: {
+      // No description in the frontmatter: missing_description.
+      'hooks/guard.md': '---\nname: guard\n---\n\nBlock rm -rf.\n',
+      'hooks/audit.md': '---\nname: audit\ndescription: Logs every Bash call.\n---\n\nLog it.\n'
+    },
+    pathKey: 'hookPath',
+    pattern: 'missing_description'
   }
 ];
 

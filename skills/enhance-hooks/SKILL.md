@@ -2,7 +2,7 @@
 name: enhance-hooks
 description: "Use when reviewing hook configurations and hook scripts for safety, correct exit codes and output, timeouts, and matcher scope."
 version: 5.2.0
-argument-hint: "[path] [--fix]"
+argument-hint: "[path] [--fix] [--verbose]"
 ---
 
 # enhance-hooks
@@ -14,11 +14,13 @@ Hooks live in `hooks` blocks of `.claude/settings.json`, `.claude/settings.local
 ## Run the analyzer
 
 ```bash
-node -e 'const a=require(process.argv[1]); console.log(JSON.stringify(a.analyzeAllHooks(process.argv[2]), null, 2))' \
-  "${CLAUDE_PLUGIN_ROOT}/lib/enhance/hook-analyzer.js" "<path>"
+node -e 'const a=require(process.argv[1]); console.log(JSON.stringify(a.analyzeAllHooks(process.argv[2], { verbose: process.argv[3] === "true" }), null, 2))' \
+  "${CLAUDE_PLUGIN_ROOT}/lib/enhance/hook-analyzer.js" "<path>" "<true|false>"
 ```
 
-The analyzer only checks frontmatter on hook markdown files. The script and config review below is yours.
+Pass `true` as the last argument when `--verbose` is set (or your caller sets `verbose`): without it the analyzer skips its LOW certainty checks. `<path>` can be one hook markdown file or a directory; the result is an array with one entry per hook markdown file.
+
+The analyzer only checks frontmatter on hook markdown files, so a JSON config or a script gives `[]`. The script and config review below is yours.
 
 ## Check facts against the current reference
 
