@@ -2,7 +2,7 @@
 name: enhance-docs
 description: "Use when improving documentation: broken links, structure, stale content, and readiness for retrieval by AI tools."
 version: 5.2.0
-argument-hint: "[path] [--fix] [--ai]"
+argument-hint: "[path] [--fix] [--ai] [--verbose]"
 ---
 
 # enhance-docs
@@ -15,9 +15,11 @@ Make docs correct first, then easy to navigate for people and easy to retrieve f
 ## Run the analyzer
 
 ```bash
-node -e 'const a=require(process.argv[1]); console.log(JSON.stringify(a.analyze({ doc: process.argv[2], mode: process.argv[3] }), null, 2))' \
-  "${CLAUDE_PLUGIN_ROOT}/lib/enhance/docs-analyzer.js" "<path>" "<ai|both>"
+node -e 'const a=require(process.argv[1]); console.log(JSON.stringify(a.analyze({ doc: process.argv[2], mode: process.argv[3], verbose: process.argv[4] === "true" }), null, 2))' \
+  "${CLAUDE_PLUGIN_ROOT}/lib/enhance/docs-analyzer.js" "<path>" "<ai|both>" "<true|false>"
 ```
+
+Pass `true` as the last argument when `--verbose` is set (or your caller sets `verbose`): without it the analyzer skips its LOW certainty checks.
 
 Verify each finding: the analyzer has false positives. If the prompt includes doc-drift or stale-doc context from repo-intel, prioritize those docs: a doc that names a symbol that no longer exists is the most valuable finding you can report.
 
