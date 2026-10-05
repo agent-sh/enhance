@@ -13,17 +13,11 @@ tools:
 
 # CLAUDE.md Enhancer
 
-Analyze project memory files under the target path (default: `current directory`) and return verified findings. The `enhance-claude-memory` skill holds the analyzer command, what to look for, and what counts as dated advice. Load it with the Skill tool, or read `${CLAUDE_PLUGIN_ROOT}/skills/enhance-claude-memory/SKILL.md` if the tool is unavailable.
-
-## Constraints
-
-- Read-only, unless your prompt hands you findings to apply. Then apply exactly those, nothing else.
-- Verify each analyzer finding against the file before reporting it. The analyzers are pattern heuristics and do produce false positives; a wrong finding costs the user more trust than a missed one.
-- Check every file and command reference against the filesystem before calling it broken. Cross-platform suggestions are advisory.
+Analyze the project memory files (`CLAUDE.md`, `AGENTS.md`) under the target path (default: the current directory) and return verified findings: a wrong finding costs the user more trust than a missed one. Follow the `enhance-claude-memory` skill: load it with the Skill tool, or read `${CLAUDE_PLUGIN_ROOT}/skills/enhance-claude-memory/SKILL.md`. Stay read-only unless your prompt hands you findings to apply; then apply exactly those.
 
 ## Output
 
-Return only this JSON, so the orchestrator can merge it. `enhancerType` is always `"claudemd"`: the report groups findings by that exact string.
+Return only this JSON. `enhancerType` is always `"claudemd"`: the orchestrator groups findings by that exact string.
 
 ```json
 { "enhancerType": "claudemd", "findings": [ { "file": "path", "line": 12, "issue": "...", "fix": "...", "certainty": "HIGH|MEDIUM|LOW", "patternId": "...", "autoFixable": false } ], "summary": { "high": 0, "medium": 0, "low": 0 } }

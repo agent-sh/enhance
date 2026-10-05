@@ -17,7 +17,7 @@ node -e 'const a=require(process.argv[1]); console.log(JSON.stringify(a.analyze(
   "${CLAUDE_PLUGIN_ROOT}/lib/enhance/projectmemory-analyzer.js" "<path>"
 ```
 
-It validates file and command references, measures tokens, and estimates README overlap. Verify its findings before reporting.
+It validates file and command references, measures tokens, and estimates README overlap. Verify each finding before reporting it: the analyzer has false positives.
 
 ## What to check
 
@@ -25,7 +25,7 @@ It validates file and command references, measures tokens, and estimates README 
 
 **Content only the author knows.** Good project memory holds what a capable newcomer could not infer from the code in a few minutes: build and test commands, conventions that are not visible in the code, the real constraints (release process, protected branches, secrets handling, generated files not to edit) with their reasons, and where things live when it is not obvious. Flag what the model already knows (generic best practices, "write clean code", language basics) and what duplicates the README.
 
-**Dated instruction style.** Apply the `enhance-prompts` guidance. In memory files the common cases are all-caps rule lists, rules without reasons, the same rule stated in several places, and history ("we switched to X after incident Y") where only the current rule matters. Never suggest strengthening language to MUST or ALWAYS, and never suggest adding emphasis markers: the analyzer's `missing_emphasis_markers` and prose-versus-bullets `verbose_instructions` findings encode older advice, so down-rank them to LOW at most.
+**Dated instruction style.** Apply the `enhance-prompts` guidance. In memory files the common cases are all-caps rule lists, rules without reasons, the same rule stated in several places, and history ("we switched to X after incident Y") where only the current rule matters. The analyzer's `missing_emphasis_markers` and prose-versus-bullets `verbose_instructions` findings encode older advice: down-rank them to LOW at most, and do not suggest MUST, ALWAYS or emphasis markers.
 
 **Size.** Flag files well past roughly 1,500 tokens, and suggest moving reference material into files the memory links to, loaded when needed.
 
@@ -35,7 +35,7 @@ It validates file and command references, measures tokens, and estimates README 
 
 ## Fix
 
-With `--fix`, apply HIGH certainty auto-fixes only (`applyFixes` in the analyzer). Never delete a rule in a fix: removing guidance is the author's call.
+With `--fix`, apply HIGH certainty auto-fixes only (`applyFixes` in the analyzer). A fix does not delete rules: removing guidance is the author's call.
 
 ## Output
 
