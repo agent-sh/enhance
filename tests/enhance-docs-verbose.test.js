@@ -18,8 +18,9 @@ const path = require('node:path');
 const repoRoot = path.resolve(__dirname, '..');
 const skillPath = path.join(repoRoot, 'skills', 'enhance-docs', 'SKILL.md');
 
-// Mixed bullet styles: structure_recommendations, a LOW certainty check in
-// the default (both) mode.
+// Mixed bullet styles trigger structure_recommendations, a LOW certainty
+// check in the default (both) mode. The short paragraphs also trigger
+// readability_with_rag_suggestions (LOW); the test asserts only the first.
 const FIXTURE = '# Guide\n\n- one\n* two\n';
 const LOW_PATTERN = 'structure_recommendations';
 
