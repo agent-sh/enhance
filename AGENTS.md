@@ -4,7 +4,7 @@
 
 ## Overview
 
-An agentsys plugin: Markdown prompts in `commands/`, `agents/` and `skills/` that drive the Node.js analyzers in `lib/enhance/`. Plain CommonJS, no build step, tests use `node:test`. Everything in `lib/` except `lib/agentsys.js` and `lib/package.json` is synced from [agent-core](https://github.com/agent-sh/agent-core), so change shared code there: a local edit is overwritten by the next sync PR.
+An agentsys plugin: Markdown prompts in `commands/`, `agents/` and `skills/` that drive the Node.js analyzers in `lib/enhance/`. Plain CommonJS, no build step, tests use `node:test`. Everything in `lib/` except `lib/package.json` is synced from [agent-core](https://github.com/agent-sh/agent-core), including `lib/agentsys.js`, so change shared code there: a local edit is overwritten by the next sync PR.
 
 ## Agents
 
