@@ -1,7 +1,7 @@
 ---
 name: enhance-skills
 description: "Use when reviewing SKILL.md files for trigger quality, invocation control, tool scope, size, and prompt quality."
-version: 5.2.0
+version: 5.3.0
 argument-hint: "[path] [--fix] [--verbose]"
 ---
 

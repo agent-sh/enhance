@@ -2,11 +2,17 @@
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-10-06
+
 ### Changed
 
 - Second pass over the prompts for current models. The enhancer agents no longer repeat constraints their skills already state, "Never" rules read as plain instructions with their reasons, and a dated hooks example is gone. The command, agent, skill and AGENTS.md files went from 6,877 to 6,389 words.
 - The agent-prompts skill down-ranks the analyzer's `missing_role`, and `missing_constraints` when an agent states its limits inline or in the skill it loads, so agents written in this style are not flagged HIGH.
 - AGENTS.md drops the generic model table and the GPU validation text this CPU-only repo does not need, replaces the nonexistent `npm run validate` with the agnix command CI runs, and gains an Overview that says which of `lib/` is synced from agent-core.
+
+### Removed
+
+- Removed unused `lib/repo-map/` leftovers (cache, converter, installer, updater) and a stale `lib/binary/index.test.js`.
 
 ### Fixed
 

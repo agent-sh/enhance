@@ -1,7 +1,7 @@
 ---
 name: enhance-cross-file
 description: "Use when checking consistency across agents, skills, and commands: tools used but not declared, references to agents that do not exist, duplicated or contradictory rules."
-version: 5.2.0
+version: 5.3.0
 argument-hint: "[path]"
 ---
 

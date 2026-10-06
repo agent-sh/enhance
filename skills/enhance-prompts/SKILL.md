@@ -1,7 +1,7 @@
 ---
 name: enhance-prompts
 description: "Use when reviewing or improving prompt text (system prompts, commands, agent bodies, templates) for clarity, dated patterns, and output contracts. Holds the shared prompt guidance the other enhance skills cite."
-version: 5.2.0
+version: 5.3.0
 argument-hint: "[path] [--fix] [--verbose]"
 ---
 

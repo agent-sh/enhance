@@ -1,7 +1,7 @@
 ---
 name: enhance-hooks
 description: "Use when reviewing hook configurations and hook scripts for safety, correct exit codes and output, timeouts, and matcher scope."
-version: 5.2.0
+version: 5.3.0
 argument-hint: "[path] [--fix] [--verbose]"
 ---
 

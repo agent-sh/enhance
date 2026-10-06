@@ -1,7 +1,7 @@
 ---
 name: enhance-plugins
 description: "Use when reviewing agent plugins: manifest structure, MCP tool schemas and descriptions, and plugin security patterns."
-version: 5.2.0
+version: 5.3.0
 argument-hint: "[path] [--fix] [--verbose]"
 ---
 
