@@ -1,7 +1,7 @@
 ---
 name: enhance-claude-memory
 description: "Use when reviewing CLAUDE.md or AGENTS.md project memory files for broken references, bloat, duplication with the README, and instructions that no longer help."
-version: 5.2.0
+version: 5.3.0
 argument-hint: "[path] [--fix] [--verbose]"
 ---
 

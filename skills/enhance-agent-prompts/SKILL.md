@@ -1,7 +1,7 @@
 ---
 name: enhance-agent-prompts
 description: "Use when reviewing agent definition files: frontmatter, trigger description, tool scope, model choice, and the agent's prompt body."
-version: 5.2.0
+version: 5.3.0
 argument-hint: "[path] [--fix] [--verbose]"
 ---
 

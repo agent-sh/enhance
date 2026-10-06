@@ -1,7 +1,7 @@
 ---
 name: enhance-orchestrator
 description: "Use when running /enhance: discovers which agent-facing content exists, runs the matching enhancers, and merges their findings into one report."
-version: 5.2.0
+version: 5.3.0
 argument-hint: "[path] [--apply] [--focus=TYPE]"
 ---
 

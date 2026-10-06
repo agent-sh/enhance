@@ -1,7 +1,7 @@
 ---
 name: enhance-docs
 description: "Use when improving documentation: broken links, structure, stale content, and readiness for retrieval by AI tools."
-version: 5.2.0
+version: 5.3.0
 argument-hint: "[path] [--fix] [--ai] [--verbose]"
 ---
 

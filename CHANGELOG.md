@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-10-06
+
 ### Changed
 
 - Second pass over the prompts for current models. The enhancer agents no longer repeat constraints their skills already state, "Never" rules read as plain instructions with their reasons, and a dated hooks example is gone. The command, agent, skill and AGENTS.md files went from 6,877 to 6,389 words.
